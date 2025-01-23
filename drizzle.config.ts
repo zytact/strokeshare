@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["sketchsync_*"],
+  tablesFilter: ["strokeshare_*"],
 } satisfies Config;
