@@ -1,7 +1,13 @@
+import InfiniteCanvas from "@/components/ui/InfiniteCanvas";
+import { ModeToggle } from "@/components/ui/mode-toggle";
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <h1>Hello You Little Shit</h1>
+    <main className="relative h-screen w-screen overflow-hidden">
+      <div className="absolute right-4 top-4 z-10">
+        <ModeToggle />
+      </div>
+      <InfiniteCanvas />
     </main>
   );
 }
