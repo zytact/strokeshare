@@ -45,6 +45,7 @@ export default function InfiniteCanvas() {
         className="relative h-[4000px] w-[4000px]"
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
+          willChange: "transform",
         }}
       >
         {/* Canvas content goes here */}
