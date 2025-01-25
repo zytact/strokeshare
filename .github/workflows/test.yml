@@ -1,0 +1,16 @@
+name: Test Project
+
+on: push
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        container:
+            image: node:22
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  node-version: 22
+            - run: npm install -g bun
+            - run: bun install
+            - run: bun run test
