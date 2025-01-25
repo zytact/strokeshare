@@ -1,5 +1,5 @@
 import "@/styles/globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
