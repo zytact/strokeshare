@@ -8,32 +8,26 @@ export default function InfiniteCanvas() {
   const [startPan, setStartPan] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      setIsPanning(true);
-      setStartPan({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsPanning(true);
+    setStartPan({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      setPosition({
+        x: e.clientX - startPan.x,
+        y: e.clientY - startPan.y,
       });
-    },
-    [position],
-  );
+    }
+  };
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (isPanning) {
-        setPosition({
-          x: e.clientX - startPan.x,
-          y: e.clientY - startPan.y,
-        });
-      }
-    },
-    [isPanning, startPan],
-  );
-
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     setIsPanning(false);
-  }, []);
+  };
 
   return (
     <div
