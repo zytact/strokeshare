@@ -43,4 +43,3 @@ describe('InfiniteCanvas', () => {
         expect(canvasElement).toBeInTheDocument();
     });
 });
-
