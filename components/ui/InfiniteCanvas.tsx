@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 
 type Point = {
     x: number;
@@ -14,6 +15,7 @@ type Line = {
 };
 
 export default function InfiniteCanvas() {
+    const { theme } = useTheme();
     const [isPanning, setIsPanning] = useState(false);
     const [isDrawingMode, setIsDrawingMode] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -21,9 +23,15 @@ export default function InfiniteCanvas() {
     const [lines, setLines] = useState<Line[]>([]);
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [currentColor, setCurrentColor] = useState('#ffffff'); // Add color state
+    const [currentColor, setCurrentColor] = useState(() =>
+        theme === 'dark' ? '#ffffff' : '#000000',
+    );
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        setCurrentColor(theme === 'dark' ? '#ffffff' : '#000000');
+    }, [theme]);
 
     // Handle panning
     const handleMouseDown = (e: React.MouseEvent) => {
