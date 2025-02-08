@@ -4,6 +4,6 @@
 
 - [x] Infinite Canvas
 - [x] Theme Toggle
-- [ ] Basic drawing features
-- [ ]
+- [X] Basic drawing features
+- [ ] Drawing shapes
 - [ ]
