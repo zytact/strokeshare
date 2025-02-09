@@ -198,7 +198,9 @@ export default function InfiniteCanvas() {
                 className={`h-full w-full overflow-hidden ${
                     isDrawingMode
                         ? 'cursor-crosshair'
-                        : 'cursor-grab active:cursor-grabbing'
+                        : isPanning
+                          ? 'cursor-grabbing'
+                          : 'cursor-grab'
                 }`}
                 data-testid="infinite-canvas"
                 onMouseDown={handleMouseDown}
