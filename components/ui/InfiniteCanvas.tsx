@@ -33,38 +33,73 @@ export default function InfiniteCanvas() {
         setCurrentColor(theme === 'dark' ? '#ffffff' : '#000000');
     }, [theme]);
 
-    // Handle panning
+    // Handle canvas resizing
+    useEffect(() => {
+        const container = containerRef.current;
+        const canvas = canvasRef.current;
+        if (!container || !canvas) return;
+
+        const updateCanvasSize = () => {
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        };
+
+        updateCanvasSize();
+
+        const resizeObserver = new ResizeObserver(updateCanvasSize);
+        resizeObserver.observe(container);
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                handleUndo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    });
+
+    const handleUndo = () => {
+        setLines((prev) => prev.slice(0, -1));
+    };
+
+    // Handle panning and drawing
     const handleMouseDown = (e: React.MouseEvent) => {
         if (isDrawingMode) {
-            // Start drawing
             setIsDrawing(true);
-            const rect = containerRef.current?.getBoundingClientRect();
+            const rect = canvasRef.current?.getBoundingClientRect();
             if (rect) {
-                const x = e.clientX - rect.left - position.x;
-                const y = e.clientY - rect.top - position.y;
+                const x = e.clientX - rect.left + position.x;
+                const y = e.clientY - rect.top + position.y;
                 setCurrentLine([{ x, y }]);
             }
         } else {
-            // Start panning
             setIsPanning(true);
-            setStartPan({
-                x: e.clientX - position.x,
-                y: e.clientY - position.y,
-            });
+            setStartPan({ x: e.clientX, y: e.clientY });
         }
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         if (isPanning && !isDrawingMode) {
-            setPosition({
-                x: e.clientX - startPan.x,
-                y: e.clientY - startPan.y,
-            });
+            const deltaX = e.clientX - startPan.x;
+            const deltaY = e.clientY - startPan.y;
+            // Invert the deltas here to move in the intuitive direction
+            setPosition((prev) => ({
+                x: prev.x - deltaX,
+                y: prev.y - deltaY,
+            }));
+            setStartPan({ x: e.clientX, y: e.clientY });
         } else if (isDrawing && isDrawingMode) {
-            const rect = containerRef.current?.getBoundingClientRect();
+            const rect = canvasRef.current?.getBoundingClientRect();
             if (rect) {
-                const x = e.clientX - rect.left - position.x;
-                const y = e.clientY - rect.top - position.y;
+                const x = e.clientX - rect.left + position.x;
+                const y = e.clientY - rect.top + position.y;
                 setCurrentLine((prev) => [...prev, { x, y }]);
             }
         }
@@ -74,7 +109,7 @@ export default function InfiniteCanvas() {
         if (isDrawing) {
             setLines((prev) => [
                 ...prev,
-                { points: currentLine, color: currentColor }, // Use currentColor
+                { points: currentLine, color: currentColor },
             ]);
             setCurrentLine([]);
             setIsDrawing(false);
@@ -86,46 +121,43 @@ export default function InfiniteCanvas() {
         setIsDrawingMode(!isDrawingMode);
     };
 
-    // Draw all lines
+    // Draw all lines with pan offset
     const drawLines = (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+        // Keep the negative sign so the canvas moves as expected
+        ctx.translate(-position.x, -position.y);
 
-        // Draw completed lines
         lines.forEach((line) => {
             if (line.points.length < 2) return;
-
             ctx.beginPath();
             ctx.strokeStyle = line.color;
             ctx.lineWidth = 2;
             ctx.moveTo(line.points[0].x, line.points[0].y);
-
             for (let i = 1; i < line.points.length; i++) {
                 ctx.lineTo(line.points[i].x, line.points[i].y);
             }
             ctx.stroke();
         });
 
-        // Draw current line with currentColor
         if (currentLine.length >= 2) {
             ctx.beginPath();
             ctx.strokeStyle = currentColor;
             ctx.lineWidth = 2;
             ctx.moveTo(currentLine[0].x, currentLine[0].y);
-
             for (let i = 1; i < currentLine.length; i++) {
                 ctx.lineTo(currentLine[i].x, currentLine[i].y);
             }
             ctx.stroke();
         }
+
+        ctx.restore();
     };
 
-    // Update canvas when lines change
     useEffect(() => {
         const ctx = canvasRef.current?.getContext('2d');
-        if (ctx) {
-            drawLines(ctx);
-        }
-    }, [lines, currentLine, drawLines]);
+        if (ctx) drawLines(ctx);
+    }, [lines, currentLine, position, drawLines]);
 
     return (
         <div className="relative h-full w-full">
@@ -137,16 +169,28 @@ export default function InfiniteCanvas() {
                     {isDrawingMode ? 'Draw Mode' : 'Pan Mode'}
                 </Button>
                 {isDrawingMode && (
-                    <div className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 backdrop-blur-sm">
-                        <label htmlFor="colorPicker">Color:</label>
-                        <input
-                            id="colorPicker"
-                            type="color"
-                            value={currentColor}
-                            onChange={(e) => setCurrentColor(e.target.value)}
-                            className="h-6 w-6 cursor-pointer bg-transparent"
-                        />
-                    </div>
+                    <>
+                        <Button
+                            onClick={handleUndo}
+                            disabled={lines.length === 0}
+                            className="rounded bg-white/10 px-4 py-2 backdrop-blur-sm"
+                        >
+                            {' '}
+                            Undo{' '}
+                        </Button>
+                        <div className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 backdrop-blur-sm">
+                            <label htmlFor="colorPicker">Color:</label>
+                            <input
+                                id="colorPicker"
+                                type="color"
+                                value={currentColor}
+                                onChange={(e) =>
+                                    setCurrentColor(e.target.value)
+                                }
+                                className="h-6 w-6 cursor-pointer bg-transparent"
+                            />
+                        </div>
+                    </>
                 )}
             </div>
             <div
@@ -162,26 +206,7 @@ export default function InfiniteCanvas() {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
-                <div
-                    className="relative h-[4000px] w-[4000px]"
-                    style={{
-                        transform: `translate(${position.x}px, ${position.y}px)`,
-                        willChange: 'transform',
-                    }}
-                >
-                    <canvas
-                        ref={canvasRef}
-                        width={4000}
-                        height={4000}
-                        className="absolute left-0 top-0"
-                    />
-                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-                        <h2 className="text-xl">Infinite Canvas</h2>
-                        <p>
-                            Click and drag to {isDrawingMode ? 'draw' : 'pan'}
-                        </p>
-                    </div>
-                </div>
+                <canvas ref={canvasRef} className="h-full w-full" />
             </div>
         </div>
     );
