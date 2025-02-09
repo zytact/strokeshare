@@ -48,14 +48,14 @@ describe('InfiniteCanvas', () => {
         const modeButton = screen.getByText('Pan Mode');
 
         // Initially, color picker and undo button should not be visible
-        expect(screen.queryByText('Color:')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('color-picker')).not.toBeInTheDocument();
         expect(screen.queryByText('Undo')).not.toBeInTheDocument();
 
         // Switch to draw mode
         fireEvent.click(modeButton);
 
         // Now drawing controls should be visible
-        expect(screen.getByText('Color:')).toBeInTheDocument();
+        expect(screen.getByTestId('color-picker')).toBeInTheDocument();
         expect(screen.getByText('Undo')).toBeInTheDocument();
     });
 
@@ -113,7 +113,7 @@ describe('InfiniteCanvas', () => {
         const modeButton = screen.getByText('Pan Mode');
         fireEvent.click(modeButton);
 
-        const colorPicker = screen.getByLabelText('Color:');
+        const colorPicker = screen.getByTestId('color-picker');
         fireEvent.change(colorPicker, { target: { value: '#ff0000' } });
 
         expect(colorPicker).toHaveValue('#ff0000');

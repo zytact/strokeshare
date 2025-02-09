@@ -162,10 +162,7 @@ export default function InfiniteCanvas() {
     return (
         <div className="relative h-full w-full">
             <div className="absolute left-4 top-4 z-10 flex gap-2">
-                <Button
-                    onClick={toggleMode}
-                    className="rounded-lg bg-white/10 px-4 py-2 backdrop-blur-sm"
-                >
+                <Button onClick={toggleMode}>
                     {isDrawingMode ? 'Draw Mode' : 'Pan Mode'}
                 </Button>
                 {isDrawingMode && (
@@ -173,23 +170,22 @@ export default function InfiniteCanvas() {
                         <Button
                             onClick={handleUndo}
                             disabled={lines.length === 0}
-                            className="rounded bg-white/10 px-4 py-2 backdrop-blur-sm"
                         >
                             {' '}
                             Undo{' '}
                         </Button>
-                        <div className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 backdrop-blur-sm">
-                            <label htmlFor="colorPicker">Color:</label>
+                        <Button className="backdrop-blur">
                             <input
                                 id="colorPicker"
                                 type="color"
+                                data-testid="color-picker"
                                 value={currentColor}
                                 onChange={(e) =>
                                     setCurrentColor(e.target.value)
                                 }
-                                className="h-6 w-6 cursor-pointer bg-transparent"
+                                className="h-6 w-6 cursor-pointer rounded-md bg-transparent"
                             />
-                        </div>
+                        </Button>
                     </>
                 )}
             </div>
