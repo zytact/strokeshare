@@ -97,7 +97,7 @@ describe('InfiniteCanvas', () => {
         fireEvent.click(modeButton);
 
         const undoButton = screen.getByText('Undo');
-        expect(undoButton).toBeDisabled(); // Should be disabled initially
+        expect(undoButton).toHaveClass('disabled:opacity-50'); // Should be disabled initially
 
         // Simulate drawing
         const canvas = screen.getByTestId('infinite-canvas');
@@ -106,6 +106,26 @@ describe('InfiniteCanvas', () => {
         fireEvent.mouseUp(canvas);
 
         expect(undoButton).not.toBeDisabled(); // Should be enabled after drawing
+    });
+
+    it('handles clear functionality', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByText('Pan Mode');
+        fireEvent.click(modeButton);
+
+        // Draw something
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Click clear button
+        const clearButton = screen.getByText('Clear');
+        fireEvent.click(clearButton);
+
+        // After clearing, the undo button should be disabled
+        const undoButton = screen.getByText('Undo');
+        expect(undoButton).toHaveClass('disabled:opacity-50');
     });
 
     it('handles color picker changes', () => {
