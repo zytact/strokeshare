@@ -28,35 +28,49 @@ describe('InfiniteCanvas', () => {
 
     it('starts in pan mode by default', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
         expect(modeButton).toBeInTheDocument();
     });
 
     it('toggles between pan and draw mode', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const toggleButton = screen.getByTestId('toggle-button');
 
-        fireEvent.click(modeButton);
-        expect(screen.getByText('Draw Mode')).toBeInTheDocument();
+        // Initially should show Hand icon in pan mode
+        expect(toggleButton.querySelector('svg')).toHaveAttribute(
+            'aria-label',
+            'pan-mode',
+        );
 
-        fireEvent.click(modeButton);
-        expect(screen.getByText('Pan Mode')).toBeInTheDocument();
+        // Click to switch to draw mode
+        fireEvent.click(toggleButton);
+        expect(toggleButton.querySelector('svg')).toHaveAttribute(
+            'aria-label',
+            'draw-mode',
+        );
+
+        // Click again to switch back to pan mode
+        fireEvent.click(toggleButton);
+        expect(toggleButton.querySelector('svg')).toHaveAttribute(
+            'aria-label',
+            'pan-mode',
+        );
     });
 
     it('shows drawing controls only in draw mode', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
 
         // Initially, color picker and undo button should not be visible
         expect(screen.queryByTestId('color-picker')).not.toBeInTheDocument();
-        expect(screen.queryByText('Undo')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('undo')).not.toBeInTheDocument();
 
         // Switch to draw mode
         fireEvent.click(modeButton);
 
         // Now drawing controls should be visible
         expect(screen.getByTestId('color-picker')).toBeInTheDocument();
-        expect(screen.getByText('Undo')).toBeInTheDocument();
+        expect(screen.getByTestId('undo')).toBeInTheDocument();
     });
 
     it('handles mouse events for panning', () => {
@@ -77,7 +91,7 @@ describe('InfiniteCanvas', () => {
     it('handles mouse events for drawing', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
 
         // Switch to draw mode
         fireEvent.click(modeButton);
@@ -93,10 +107,10 @@ describe('InfiniteCanvas', () => {
 
     it('handles undo functionality', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
         fireEvent.click(modeButton);
 
-        const undoButton = screen.getByText('Undo');
+        const undoButton = screen.getByTestId('undo');
         expect(undoButton).toHaveClass('disabled:opacity-50'); // Should be disabled initially
 
         // Simulate drawing
@@ -110,11 +124,11 @@ describe('InfiniteCanvas', () => {
 
     it('handles clear functionality', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
         fireEvent.click(modeButton);
 
         // Should be disabled at first
-        const clearButton = screen.getByText('Clear');
+        const clearButton = screen.getByTestId('clear');
         expect(clearButton).toHaveClass('disabled:opacity-50');
 
         // Draw something
@@ -127,14 +141,14 @@ describe('InfiniteCanvas', () => {
         fireEvent.click(clearButton);
 
         // After clearing, the undo and clear button should be disabled
-        const undoButton = screen.getByText('Undo');
+        const undoButton = screen.getByTestId('undo');
         expect(undoButton).toHaveClass('disabled:opacity-50');
         expect(clearButton).toHaveClass('disabled:opacity-50');
     });
 
     it('handles color picker changes', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByText('Pan Mode');
+        const modeButton = screen.getByTestId('toggle-button');
         fireEvent.click(modeButton);
 
         const colorPicker = screen.getByTestId('color-picker');
