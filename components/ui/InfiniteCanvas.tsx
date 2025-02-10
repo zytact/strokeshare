@@ -1,18 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useLineStore } from '@/store/useLineStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-
-type Point = {
-    x: number;
-    y: number;
-};
-
-type Line = {
-    points: Point[];
-    color: string;
-};
+import Clear from './Clear';
 
 export default function InfiniteCanvas() {
     const { theme } = useTheme();
@@ -20,7 +12,7 @@ export default function InfiniteCanvas() {
     const [isDrawingMode, setIsDrawingMode] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-    const [lines, setLines] = useState<Line[]>([]);
+    const { lines, addLine, removeLine } = useLineStore();
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentColor, setCurrentColor] = useState(() =>
@@ -66,7 +58,7 @@ export default function InfiniteCanvas() {
     });
 
     const handleUndo = () => {
-        setLines((prev) => prev.slice(0, -1));
+        removeLine(lines.length - 1);
     };
 
     // Handle panning and drawing
@@ -107,10 +99,7 @@ export default function InfiniteCanvas() {
 
     const handleMouseUp = () => {
         if (isDrawing) {
-            setLines((prev) => [
-                ...prev,
-                { points: currentLine, color: currentColor },
-            ]);
+            addLine({ points: currentLine, color: currentColor });
             setCurrentLine([]);
             setIsDrawing(false);
         }
@@ -174,6 +163,7 @@ export default function InfiniteCanvas() {
                             {' '}
                             Undo{' '}
                         </Button>
+                        <Clear />
                         <Button className="backdrop-blur">
                             <input
                                 id="colorPicker"
