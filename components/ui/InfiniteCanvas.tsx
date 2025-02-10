@@ -4,16 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 
-type Point = {
-    x: number;
-    y: number;
-};
-
-type Line = {
-    points: Point[];
-    color: string;
-};
-
 export default function InfiniteCanvas() {
     const { theme } = useTheme();
     const [isPanning, setIsPanning] = useState(false);
