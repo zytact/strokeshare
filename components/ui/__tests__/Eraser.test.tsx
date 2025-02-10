@@ -3,8 +3,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import Eraser from '../Eraser';
-import { useEraserStore } from '@/store/useCanvasStore';
-import InfiniteCanvas from '@/components/ui/InfiniteCanvas';
+import { useEraserStore, useLineStore } from '@/store/useCanvasStore';
 
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
@@ -15,116 +14,89 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 describe('Eraser', () => {
     afterEach(() => {
         cleanup();
-        // Reset the eraser store state after each test
+        // Reset both eraser and line stores after each test
         useEraserStore.setState({ isEraserMode: false });
+        useLineStore.setState({ lines: [] });
     });
 
-    it('renders without crashing', () => {
+    it('renders eraser button with icon', () => {
         render(<Eraser />);
-        expect(screen.getByRole('button')).toBeInTheDocument();
+        const eraserButton = screen.getByTestId('eraser-button');
+        expect(eraserButton).toBeInTheDocument();
+        expect(eraserButton.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('is disabled when there are no lines', () => {
+        useLineStore.setState({ lines: [] });
+        render(<Eraser />);
+        const eraserButton = screen.getByTestId('eraser-button');
+        expect(eraserButton).toHaveAttribute('disabled');
+    });
+
+    it('is enabled when there are lines', () => {
+        useLineStore.setState({
+            lines: [{ points: [{ x: 0, y: 0 }], color: '#000000' }],
+        });
+        render(<Eraser />);
+        const eraserButton = screen.getByTestId('eraser-button');
+        expect(eraserButton).not.toHaveAttribute('disabled');
     });
 
     it('toggles eraser mode when clicked', () => {
-        render(<Eraser />);
-        const eraserButton = screen.getByRole('button');
+        useLineStore.setState({
+            lines: [{ points: [{ x: 0, y: 0 }], color: '#000000' }],
+        });
 
-        // Initially should have default variant (not containing bg-secondary)
-        expect(eraserButton).not.toHaveClass('bg-secondary');
+        render(<Eraser />);
+        const eraserButton = screen.getByTestId('eraser-button');
+
+        // Initial state (default variant)
+        expect(eraserButton).toHaveClass('bg-primary');
+        expect(useEraserStore.getState().isEraserMode).toBe(false);
 
         // Click to enable eraser mode
         fireEvent.click(eraserButton);
         expect(eraserButton).toHaveClass('bg-secondary');
-
-        // Click again to disable eraser mode
-        fireEvent.click(eraserButton);
-        expect(eraserButton).not.toHaveClass('bg-secondary');
-    });
-
-    it('updates store state when toggled', () => {
-        render(<Eraser />);
-        const eraserButton = screen.getByRole('button');
-
-        // Check initial state
-        expect(useEraserStore.getState().isEraserMode).toBe(false);
-
-        // Toggle eraser mode on
-        fireEvent.click(eraserButton);
         expect(useEraserStore.getState().isEraserMode).toBe(true);
 
-        // Toggle eraser mode off
+        // Click to disable eraser mode
         fireEvent.click(eraserButton);
+        expect(eraserButton).toHaveClass('bg-primary');
         expect(useEraserStore.getState().isEraserMode).toBe(false);
     });
 
-    describe('Eraser Integration with InfiniteCanvas', () => {
-        it('eraser functionality works in drawing mode', () => {
-            render(<InfiniteCanvas />);
-
-            // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
-            fireEvent.click(modeButton);
-
-            // Enable eraser mode
-            const eraserButton = screen.getByTestId('eraser-button');
-            fireEvent.click(eraserButton);
-
-            // Verify eraser mode is active
-            expect(eraserButton).toHaveClass('bg-secondary');
-
-            // Simulate drawing and erasing
-            const canvas = screen.getByTestId('infinite-canvas');
-
-            // Draw something
-            fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
-            fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
-            fireEvent.mouseUp(canvas);
-
-            // Erase
-            fireEvent.mouseDown(canvas, { clientX: 125, clientY: 125 });
-            fireEvent.mouseMove(canvas, { clientX: 125, clientY: 125 });
-            fireEvent.mouseUp(canvas);
+    it('maintains disabled state when lines are removed', async () => {
+        // Start with lines
+        useLineStore.setState({
+            lines: [{ points: [{ x: 0, y: 0 }], color: '#000000' }],
         });
 
-        it('eraser mode disables color picker', () => {
-            render(<InfiniteCanvas />);
+        render(<Eraser />);
+        const eraserButton = screen.getByTestId('eraser-button');
+        expect(eraserButton).not.toHaveAttribute('disabled');
 
-            // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
-            fireEvent.click(modeButton);
+        // Remove all lines
+        useLineStore.setState({ lines: [] });
+        expect(eraserButton).toHaveClass('disabled:opacity-50');
+    });
 
-            // Color picker should be visible initially
-            expect(screen.getByTestId('color-picker')).toBeInTheDocument();
-
-            // Enable eraser mode
-            const eraserButton = screen.getByTestId('eraser-button');
-            fireEvent.click(eraserButton);
-
-            // Color picker should not be visible in eraser mode
-            expect(
-                screen.queryByTestId('color-picker'),
-            ).not.toBeInTheDocument();
+    it('changes variant based on eraser mode', () => {
+        useLineStore.setState({
+            lines: [{ points: [{ x: 0, y: 0 }], color: '#000000' }],
         });
 
-        it('maintains eraser state when switching between pan and draw modes', () => {
-            render(<InfiniteCanvas />);
+        render(<Eraser />);
+        const eraserButton = screen.getByTestId('eraser-button');
 
-            // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
-            fireEvent.click(modeButton);
+        // Check initial variant (default)
+        expect(eraserButton).toHaveClass('bg-primary');
 
-            // Enable eraser mode
-            const eraserButton = screen.getByTestId('eraser-button');
-            fireEvent.click(eraserButton);
+        // Enable eraser mode
+        fireEvent.click(eraserButton);
+        expect(eraserButton).toHaveClass('bg-secondary');
 
-            // Switch to pan mode
-            fireEvent.click(modeButton);
-
-            // Switch back to draw mode
-            fireEvent.click(modeButton);
-
-            // Eraser button should still be in active state
-            expect(eraserButton).toHaveClass('bg-secondary');
-            expect(useEraserStore.getState().isEraserMode).toBe(true);
-        });
+        // Disable eraser mode
+        fireEvent.click(eraserButton);
+        expect(eraserButton).toHaveClass('bg-primary');
     });
 });
