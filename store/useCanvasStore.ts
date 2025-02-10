@@ -8,6 +8,11 @@ type LineStore = {
     clearLines: () => void;
 };
 
+type EraserStore = {
+    isEraserMode: boolean;
+    toggleEraseMode: () => void;
+};
+
 export const useLineStore = create<LineStore>((set) => ({
     lines: [],
     addLine: (line) => set((state) => ({ lines: [...state.lines, line] })),
@@ -17,4 +22,10 @@ export const useLineStore = create<LineStore>((set) => ({
         })),
     updateLines: (lines) => set({ lines }),
     clearLines: () => set({ lines: [] }),
+}));
+
+export const useEraserStore = create<EraserStore>((set) => ({
+    isEraserMode: false,
+    toggleEraseMode: () =>
+        set((state) => ({ isEraserMode: !state.isEraserMode })),
 }));

@@ -1,4 +1,4 @@
-import { useLineStore } from '@/store/useLineStore';
+import { useLineStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { Trash } from 'lucide-react';
 

@@ -4,8 +4,9 @@
 
 - [x] Infinite Canvas
 - [x] Theme Toggle
-- [X] Basic drawing features
-- [ ] Eraser
+- [x] Basic drawing features
+- [x] Eraser
+- [ ] Width selector
 - [ ] Shapes
 - [ ] Text
 - [ ] Selecting font

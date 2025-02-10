@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useLineStore } from '@/store/useLineStore';
+import { useLineStore, useEraserStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import Clear from '@/components/ui/Clear';
 import { Undo, Hand, SquarePen } from 'lucide-react';
+import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
     const { theme } = useTheme();
@@ -13,7 +14,8 @@ export default function InfiniteCanvas() {
     const [isDrawingMode, setIsDrawingMode] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-    const { lines, addLine, removeLine } = useLineStore();
+    const { lines, addLine, removeLine, updateLines } = useLineStore();
+    const { isEraserMode } = useEraserStore();
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentColor, setCurrentColor] = useState(() =>
@@ -89,11 +91,38 @@ export default function InfiniteCanvas() {
             }));
             setStartPan({ x: e.clientX, y: e.clientY });
         } else if (isDrawing && isDrawingMode) {
-            const rect = canvasRef.current?.getBoundingClientRect();
-            if (rect) {
-                const x = e.clientX - rect.left + position.x;
-                const y = e.clientY - rect.top + position.y;
-                setCurrentLine((prev) => [...prev, { x, y }]);
+            if (isEraserMode) {
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (rect) {
+                    const mouseX = e.clientX - rect.left + position.x;
+                    const mouseY = e.clientY - rect.top + position.y;
+
+                    const eraserRadius = 40;
+
+                    const updatedLines = lines
+                        .map((line) => {
+                            const filteredPoints = line.points.filter(
+                                (point) => {
+                                    const distance = Math.sqrt(
+                                        Math.pow(point.x - mouseX, 2) +
+                                            Math.pow(point.y - mouseY, 2),
+                                    );
+                                    return distance > eraserRadius;
+                                },
+                            );
+                            return { ...line, points: filteredPoints };
+                        })
+                        .filter((line) => line.points.length > 1);
+
+                    updateLines(updatedLines);
+                }
+            } else {
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (rect) {
+                    const x = e.clientX - rect.left + position.x;
+                    const y = e.clientY - rect.top + position.y;
+                    setCurrentLine((prev) => [...prev, { x, y }]);
+                }
             }
         }
     };
@@ -169,18 +198,21 @@ export default function InfiniteCanvas() {
                             <Undo className="h-4 w-4" />
                         </Button>
                         <Clear />
-                        <Button className="backdrop-blur">
-                            <input
-                                id="colorPicker"
-                                type="color"
-                                data-testid="color-picker"
-                                value={currentColor}
-                                onChange={(e) =>
-                                    setCurrentColor(e.target.value)
-                                }
-                                className="h-6 w-6 cursor-pointer rounded-md bg-transparent"
-                            />
-                        </Button>
+                        <Eraser />
+                        {!isEraserMode && (
+                            <Button className="backdrop-blur">
+                                <input
+                                    id="colorPicker"
+                                    type="color"
+                                    data-testid="color-picker"
+                                    value={currentColor}
+                                    onChange={(e) =>
+                                        setCurrentColor(e.target.value)
+                                    }
+                                    className="h-6 w-6 cursor-pointer rounded-md bg-transparent"
+                                />
+                            </Button>
+                        )}
                     </>
                 )}
             </div>
