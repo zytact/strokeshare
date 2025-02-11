@@ -5,7 +5,7 @@ import { useLineStore, useEraserStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import Clear from '@/components/ui/Clear';
-import { Undo, Hand, SquarePen } from 'lucide-react';
+import { Undo, Hand, SquarePen, Redo } from 'lucide-react';
 import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
@@ -14,7 +14,8 @@ export default function InfiniteCanvas() {
     const [isDrawingMode, setIsDrawingMode] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-    const { lines, addLine, removeLine, updateLines } = useLineStore();
+    const { lines, addLine, removeLine, updateLines, removedLines, redo } =
+        useLineStore();
     const { isEraserMode } = useEraserStore();
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -48,21 +49,33 @@ export default function InfiniteCanvas() {
         return () => resizeObserver.disconnect();
     }, []);
 
+    const handleUndo = () => {
+        removeLine(lines.length - 1);
+    };
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
-                handleUndo();
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'z') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        // Ctrl/Cmd + Shift + Z for Redo
+                        redo();
+                    } else {
+                        // Ctrl/Cmd + Z for Undo
+                        handleUndo();
+                    }
+                } else if (e.key === 'y') {
+                    // Ctrl/Cmd + Y for Redo
+                    e.preventDefault();
+                    redo();
+                }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    });
-
-    const handleUndo = () => {
-        removeLine(lines.length - 1);
-    };
+    }, [redo, handleUndo]);
 
     // Handle panning and drawing
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -268,6 +281,14 @@ export default function InfiniteCanvas() {
                             data-testid="undo"
                         >
                             <Undo className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            onClick={redo}
+                            disabled={removedLines.length === 0}
+                            data-testid="redo"
+                        >
+                            <Redo className="h-4 w-4" />
                         </Button>
                         <Clear />
                         <Eraser />
