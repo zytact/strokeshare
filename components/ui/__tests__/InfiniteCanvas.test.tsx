@@ -57,6 +57,15 @@ describe('InfiniteCanvas', () => {
         );
     });
 
+    it('buttons container has correct responsive classes', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode to show all buttons
+
+        const buttonContainer = modeButton.parentElement;
+        expect(buttonContainer).toHaveClass('flex', 'sm:flex-row', 'flex-col');
+    });
+
     it('shows drawing controls only in draw mode', () => {
         render(<InfiniteCanvas />);
         const modeButton = screen.getByTestId('toggle-button');
