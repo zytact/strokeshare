@@ -377,3 +377,148 @@ describe('InfiniteCanvas Redo Functionality', () => {
         expect(redoButton).toBeDisabled();
     });
 });
+
+describe('InfiniteCanvas Eraser Undo/Redo', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('should allow undo and redo of erased lines', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw a line
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Switch to eraser mode
+        const eraserButton = screen.getByTestId('eraser-button');
+        fireEvent.click(eraserButton);
+
+        // Erase the line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo the eraser action
+        const undoButton = screen.getByTestId('undo');
+        fireEvent.click(undoButton);
+        expect(undoButton).not.toBeDisabled();
+
+        // Redo the eraser action
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).not.toBeDisabled();
+        fireEvent.click(redoButton);
+    });
+
+    it('should properly handle multiple undo/redo operations with eraser', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw multiple lines
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Draw first line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Draw second line
+        fireEvent.mouseDown(canvas, { clientX: 200, clientY: 200 });
+        fireEvent.mouseMove(canvas, { clientX: 250, clientY: 250 });
+        fireEvent.mouseUp(canvas);
+
+        // Switch to eraser mode
+        const eraserButton = screen.getByTestId('eraser-button');
+        fireEvent.click(eraserButton);
+
+        // Erase first line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        const undoButton = screen.getByTestId('undo');
+        const redoButton = screen.getByTestId('redo');
+
+        // Undo eraser action
+        fireEvent.click(undoButton);
+        expect(redoButton).not.toBeDisabled();
+
+        // Redo eraser action
+        fireEvent.click(redoButton);
+        expect(redoButton).toBeDisabled();
+
+        // Undo again
+        fireEvent.click(undoButton);
+        expect(redoButton).not.toBeDisabled();
+    });
+
+    it('should clear redo stack when drawing after erasing and undoing', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Draw initial line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Switch to eraser mode and erase
+        const eraserButton = screen.getByTestId('eraser-button');
+        fireEvent.click(eraserButton);
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo eraser action
+        const undoButton = screen.getByTestId('undo');
+        fireEvent.click(undoButton);
+
+        // Switch back to draw mode
+        fireEvent.click(eraserButton); // Turn off eraser
+
+        // Draw new line
+        fireEvent.mouseDown(canvas, { clientX: 200, clientY: 200 });
+        fireEvent.mouseMove(canvas, { clientX: 250, clientY: 250 });
+        fireEvent.mouseUp(canvas);
+
+        // Check if redo is disabled
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled();
+    });
+
+    it('should handle keyboard shortcuts for undo/redo after erasing', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Draw a line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Switch to eraser and erase
+        const eraserButton = screen.getByTestId('eraser-button');
+        fireEvent.click(eraserButton);
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo with keyboard shortcut
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+
+        // Redo with keyboard shortcut
+        fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled();
+    });
+});

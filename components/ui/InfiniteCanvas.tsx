@@ -10,12 +10,20 @@ import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
     const { theme } = useTheme();
+    const [eraserPath, setEraserPath] = useState<Point[]>([]);
     const [isPanning, setIsPanning] = useState(false);
     const [isDrawingMode, setIsDrawingMode] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-    const { lines, addLine, removeLine, updateLines, removedLines, redo } =
-        useLineStore();
+    const {
+        lines,
+        addLine,
+        updateLines,
+        undo: handleUndo,
+        redo: handleRedo,
+        history,
+        historyIndex,
+    } = useLineStore();
     const { isEraserMode } = useEraserStore();
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -49,33 +57,26 @@ export default function InfiniteCanvas() {
         return () => resizeObserver.disconnect();
     }, []);
 
-    const handleUndo = () => {
-        removeLine(lines.length - 1);
-    };
-
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 if (e.key === 'z') {
                     e.preventDefault();
                     if (e.shiftKey) {
-                        // Ctrl/Cmd + Shift + Z for Redo
-                        redo();
+                        handleRedo();
                     } else {
-                        // Ctrl/Cmd + Z for Undo
                         handleUndo();
                     }
                 } else if (e.key === 'y') {
-                    // Ctrl/Cmd + Y for Redo
                     e.preventDefault();
-                    redo();
+                    handleRedo();
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [redo, handleUndo]);
+    }, [handleUndo, handleRedo]);
 
     // Handle panning and drawing
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -115,7 +116,6 @@ export default function InfiniteCanvas() {
         if (isPanning && !isDrawingMode) {
             const deltaX = e.clientX - startPan.x;
             const deltaY = e.clientY - startPan.y;
-            // Invert the deltas here to move in the intuitive direction
             setPosition((prev) => ({
                 x: prev.x - deltaX,
                 y: prev.y - deltaY,
@@ -127,25 +127,10 @@ export default function InfiniteCanvas() {
                 if (rect) {
                     const mouseX = e.clientX - rect.left + position.x;
                     const mouseY = e.clientY - rect.top + position.y;
-
-                    const eraserRadius = 40;
-
-                    const updatedLines = lines
-                        .map((line) => {
-                            const filteredPoints = line.points.filter(
-                                (point) => {
-                                    const distance = Math.sqrt(
-                                        Math.pow(point.x - mouseX, 2) +
-                                            Math.pow(point.y - mouseY, 2),
-                                    );
-                                    return distance > eraserRadius;
-                                },
-                            );
-                            return { ...line, points: filteredPoints };
-                        })
-                        .filter((line) => line.points.length > 1);
-
-                    updateLines(updatedLines);
+                    setEraserPath((prev) => [
+                        ...prev,
+                        { x: mouseX, y: mouseY },
+                    ]);
                 }
             } else {
                 const rect = canvasRef.current?.getBoundingClientRect();
@@ -176,24 +161,10 @@ export default function InfiniteCanvas() {
                 if (isEraserMode) {
                     const mouseX = touch.clientX - rect.left + position.x;
                     const mouseY = touch.clientY - rect.top + position.y;
-                    const eraserRadius = 40;
-
-                    const updatedLines = lines
-                        .map((line) => {
-                            const filteredPoints = line.points.filter(
-                                (point) => {
-                                    const distance = Math.sqrt(
-                                        Math.pow(point.x - mouseX, 2) +
-                                            Math.pow(point.y - mouseY, 2),
-                                    );
-                                    return distance > eraserRadius;
-                                },
-                            );
-                            return { ...line, points: filteredPoints };
-                        })
-                        .filter((line) => line.points.length > 1);
-
-                    updateLines(updatedLines);
+                    setEraserPath((prev) => [
+                        ...prev,
+                        { x: mouseX, y: mouseY },
+                    ]);
                 } else {
                     const x = touch.clientX - rect.left + position.x;
                     const y = touch.clientY - rect.top + position.y;
@@ -205,7 +176,28 @@ export default function InfiniteCanvas() {
 
     const handleMouseUp = () => {
         if (isDrawing) {
-            addLine({ points: currentLine, color: currentColor });
+            if (isEraserMode && eraserPath.length > 0) {
+                const updatedLines = lines
+                    .map((line) => {
+                        const filteredPoints = line.points.filter((point) => {
+                            // Check if point is near any point in the eraser path
+                            return !eraserPath.some((eraserPoint) => {
+                                const distance = Math.sqrt(
+                                    Math.pow(point.x - eraserPoint.x, 2) +
+                                        Math.pow(point.y - eraserPoint.y, 2),
+                                );
+                                return distance <= 40; // eraser radius
+                            });
+                        });
+                        return { ...line, points: filteredPoints };
+                    })
+                    .filter((line) => line.points.length > 1);
+
+                updateLines(updatedLines);
+                setEraserPath([]); // Reset eraser path
+            } else {
+                addLine({ points: currentLine, color: currentColor });
+            }
             setCurrentLine([]);
             setIsDrawing(false);
         }
@@ -218,7 +210,27 @@ export default function InfiniteCanvas() {
 
     const handleTouchEnd = () => {
         if (isDrawing) {
-            addLine({ points: currentLine, color: currentColor });
+            if (isEraserMode && eraserPath.length > 0) {
+                const updatedLines = lines
+                    .map((line) => {
+                        const filteredPoints = line.points.filter((point) => {
+                            return !eraserPath.some((eraserPoint) => {
+                                const distance = Math.sqrt(
+                                    Math.pow(point.x - eraserPoint.x, 2) +
+                                        Math.pow(point.y - eraserPoint.y, 2),
+                                );
+                                return distance <= 40;
+                            });
+                        });
+                        return { ...line, points: filteredPoints };
+                    })
+                    .filter((line) => line.points.length > 1);
+
+                updateLines(updatedLines);
+                setEraserPath([]);
+            } else {
+                addLine({ points: currentLine, color: currentColor });
+            }
             setCurrentLine([]);
             setIsDrawing(false);
         }
@@ -277,15 +289,15 @@ export default function InfiniteCanvas() {
                     <>
                         <Button
                             onClick={handleUndo}
-                            disabled={lines.length === 0}
+                            disabled={historyIndex <= 0}
                             data-testid="undo"
                         >
                             <Undo className="h-4 w-4" />
                         </Button>
 
                         <Button
-                            onClick={redo}
-                            disabled={removedLines.length === 0}
+                            onClick={handleRedo}
+                            disabled={historyIndex >= history.length - 1}
                             data-testid="redo"
                         >
                             <Redo className="h-4 w-4" />
