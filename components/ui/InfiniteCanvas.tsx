@@ -265,7 +265,7 @@ export default function InfiniteCanvas() {
 
     return (
         <div className="relative h-full w-full">
-            <div className="absolute left-4 top-4 z-10 flex gap-2">
+            <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 sm:flex-row">
                 <Button onClick={toggleMode} data-testid="toggle-button">
                     {isDrawingMode ? (
                         <SquarePen className="h-4 w-4" aria-label="draw-mode" />
