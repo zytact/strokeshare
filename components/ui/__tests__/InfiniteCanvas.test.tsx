@@ -242,3 +242,129 @@ describe('InfiniteCanvas Touch Events', () => {
         expect(undoButton).not.toBeDisabled();
     });
 });
+
+describe('InfiniteCanvas Redo Functionality', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('redo button should be disabled initially', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled();
+    });
+
+    it('redo button should be enabled after an undo operation', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw something
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Perform undo
+        const undoButton = screen.getByTestId('undo');
+        fireEvent.click(undoButton);
+
+        // Check if redo button is enabled
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).not.toBeDisabled();
+    });
+
+    it('redo button should be disabled after redoing all available actions', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw something
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo
+        const undoButton = screen.getByTestId('undo');
+        fireEvent.click(undoButton);
+
+        // Redo
+        const redoButton = screen.getByTestId('redo');
+        fireEvent.click(redoButton);
+
+        // Check if redo button is disabled again
+        expect(redoButton).toBeDisabled();
+    });
+
+    it('handles Ctrl+Y keyboard shortcut for redo', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw something
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo with Ctrl+Z
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+
+        // Redo with Ctrl+Y
+        fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled(); // Should be disabled after redoing
+    });
+
+    it('handles Shift+Ctrl+Z keyboard shortcut for redo', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        // Draw something
+        const canvas = screen.getByTestId('infinite-canvas');
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo with Ctrl+Z
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+
+        // Redo with Shift+Ctrl+Z
+        fireEvent.keyDown(window, { key: 'z', ctrlKey: true, shiftKey: true });
+
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled(); // Should be disabled after redoing
+    });
+
+    it('clears redo stack when new drawing is made after undo', () => {
+        render(<InfiniteCanvas />);
+        const modeButton = screen.getByTestId('toggle-button');
+        fireEvent.click(modeButton); // Switch to draw mode
+
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Draw first line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo
+        const undoButton = screen.getByTestId('undo');
+        fireEvent.click(undoButton);
+
+        // Draw new line
+        fireEvent.mouseDown(canvas, { clientX: 200, clientY: 200 });
+        fireEvent.mouseMove(canvas, { clientX: 250, clientY: 250 });
+        fireEvent.mouseUp(canvas);
+
+        // Check if redo button is disabled
+        const redoButton = screen.getByTestId('redo');
+        expect(redoButton).toBeDisabled();
+    });
+});
