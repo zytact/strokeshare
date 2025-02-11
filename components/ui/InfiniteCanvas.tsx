@@ -80,6 +80,24 @@ export default function InfiniteCanvas() {
         }
     };
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.preventDefault();
+        if (isDrawingMode) {
+            setIsDrawing(true);
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (rect) {
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left + position.x;
+                const y = touch.clientY - rect.top + position.y;
+                setCurrentLine([{ x, y }]);
+            }
+        } else {
+            setIsPanning(true);
+            const touch = e.touches[0];
+            setStartPan({ x: touch.clientX, y: touch.clientY });
+        }
+    };
+
     const handleMouseMove = (e: React.MouseEvent) => {
         if (isPanning && !isDrawingMode) {
             const deltaX = e.clientX - startPan.x;
@@ -127,6 +145,51 @@ export default function InfiniteCanvas() {
         }
     };
 
+    const handleTouchMove = (e: React.TouchEvent) => {
+        e.preventDefault();
+        if (isPanning && !isDrawingMode) {
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - startPan.x;
+            const deltaY = touch.clientY - startPan.y;
+            setPosition((prev) => ({
+                x: prev.x - deltaX,
+                y: prev.y - deltaY,
+            }));
+            setStartPan({ x: touch.clientX, y: touch.clientY });
+        } else if (isDrawing && isDrawingMode) {
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (rect) {
+                const touch = e.touches[0];
+                if (isEraserMode) {
+                    const mouseX = touch.clientX - rect.left + position.x;
+                    const mouseY = touch.clientY - rect.top + position.y;
+                    const eraserRadius = 40;
+
+                    const updatedLines = lines
+                        .map((line) => {
+                            const filteredPoints = line.points.filter(
+                                (point) => {
+                                    const distance = Math.sqrt(
+                                        Math.pow(point.x - mouseX, 2) +
+                                            Math.pow(point.y - mouseY, 2),
+                                    );
+                                    return distance > eraserRadius;
+                                },
+                            );
+                            return { ...line, points: filteredPoints };
+                        })
+                        .filter((line) => line.points.length > 1);
+
+                    updateLines(updatedLines);
+                } else {
+                    const x = touch.clientX - rect.left + position.x;
+                    const y = touch.clientY - rect.top + position.y;
+                    setCurrentLine((prev) => [...prev, { x, y }]);
+                }
+            }
+        }
+    };
+
     const handleMouseUp = () => {
         if (isDrawing) {
             addLine({ points: currentLine, color: currentColor });
@@ -138,6 +201,15 @@ export default function InfiniteCanvas() {
 
     const toggleMode = () => {
         setIsDrawingMode(!isDrawingMode);
+    };
+
+    const handleTouchEnd = () => {
+        if (isDrawing) {
+            addLine({ points: currentLine, color: currentColor });
+            setCurrentLine([]);
+            setIsDrawing(false);
+        }
+        setIsPanning(false);
     };
 
     // Draw all lines with pan offset
@@ -218,7 +290,7 @@ export default function InfiniteCanvas() {
             </div>
             <div
                 ref={containerRef}
-                className={`h-full w-full overflow-hidden ${
+                className={`h-full w-full touch-none overflow-hidden ${
                     isDrawingMode
                         ? 'cursor-crosshair'
                         : isPanning
@@ -230,6 +302,9 @@ export default function InfiniteCanvas() {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             >
                 <canvas ref={canvasRef} className="h-full w-full" />
             </div>
