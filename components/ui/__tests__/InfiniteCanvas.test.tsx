@@ -150,3 +150,95 @@ describe('InfiniteCanvas', () => {
         expect(global.ResizeObserver).toBeCalled();
     });
 });
+
+describe('InfiniteCanvas Touch Events', () => {
+    afterEach(() => {
+        cleanup();
+    });
+    it('handles touch events for panning', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Simulate touch panning
+        fireEvent.touchStart(canvas, {
+            touches: [{ clientX: 100, clientY: 100 }],
+        });
+        fireEvent.touchMove(canvas, {
+            touches: [{ clientX: 150, clientY: 150 }],
+        });
+        fireEvent.touchEnd(canvas);
+
+        // Check if cursor styles are applied correctly
+        expect(canvas).toHaveClass('cursor-grab');
+    });
+
+    it('handles touch events for drawing', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+        const modeButton = screen.getByTestId('toggle-button');
+
+        // Switch to draw mode
+        fireEvent.click(modeButton);
+
+        // Check if cursor style changes
+        expect(canvas).toHaveClass('cursor-crosshair');
+
+        // Simulate drawing with touch
+        fireEvent.touchStart(canvas, {
+            touches: [{ clientX: 100, clientY: 100 }],
+        });
+        fireEvent.touchMove(canvas, {
+            touches: [{ clientX: 150, clientY: 150 }],
+        });
+        fireEvent.touchEnd(canvas);
+    });
+
+    it('handles multi-touch interactions correctly', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Simulate multi-touch interaction
+        fireEvent.touchStart(canvas, {
+            touches: [
+                { clientX: 100, clientY: 100 },
+                { clientX: 200, clientY: 200 },
+            ],
+        });
+        fireEvent.touchMove(canvas, {
+            touches: [
+                { clientX: 150, clientY: 150 },
+                { clientX: 250, clientY: 250 },
+            ],
+        });
+        fireEvent.touchEnd(canvas);
+    });
+
+    it('maintains drawing state through touch interactions', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+        const modeButton = screen.getByTestId('toggle-button');
+
+        // Switch to draw mode
+        fireEvent.click(modeButton);
+
+        // Start drawing
+        fireEvent.touchStart(canvas, {
+            touches: [{ clientX: 100, clientY: 100 }],
+        });
+
+        // Multiple touch moves
+        fireEvent.touchMove(canvas, {
+            touches: [{ clientX: 120, clientY: 120 }],
+        });
+        fireEvent.touchMove(canvas, {
+            touches: [{ clientX: 140, clientY: 140 }],
+        });
+
+        // End drawing
+        fireEvent.touchEnd(canvas);
+
+        // Verify undo button is enabled after drawing
+        const undoButton = screen.getByTestId('undo');
+        expect(undoButton).not.toBeDisabled();
+    });
+});

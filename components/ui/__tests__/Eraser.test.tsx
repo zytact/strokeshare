@@ -126,5 +126,27 @@ describe('Eraser', () => {
             expect(eraserButton).toHaveClass('bg-secondary');
             expect(useEraserStore.getState().isEraserMode).toBe(true);
         });
+
+        it('handles touch events in eraser mode', () => {
+            render(<InfiniteCanvas />);
+            const canvas = screen.getByTestId('infinite-canvas');
+            const modeButton = screen.getByTestId('toggle-button');
+
+            // Switch to draw mode
+            fireEvent.click(modeButton);
+
+            // Switch to eraser mode
+            const eraserButton = screen.getByTestId('eraser-button');
+            fireEvent.click(eraserButton);
+
+            // Simulate erasing with touch
+            fireEvent.touchStart(canvas, {
+                touches: [{ clientX: 100, clientY: 100 }],
+            });
+            fireEvent.touchMove(canvas, {
+                touches: [{ clientX: 150, clientY: 150 }],
+            });
+            fireEvent.touchEnd(canvas);
+        });
     });
 });
