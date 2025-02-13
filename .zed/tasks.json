@@ -1,0 +1,27 @@
+// Static tasks configuration.
+[
+    {
+        "label": "Run",
+        "command": "bun run dev",
+        "use_new_terminal": false,
+        "hide": "on_success"
+    },
+    {
+        "label": "Test",
+        "command": "bun run vitest -t='$ZED_SYMBOL'",
+        "use_new_terminal": false,
+        "hide": "on_success"
+    },
+    {
+        "label": "Test File",
+        "command": "bun run vitest '$ZED_FILENAME'",
+        "use_new_terminal": false,
+        "hide": "on_success"
+    },
+    {
+        "label": "Test Project",
+        "command": "bun run vitest run",
+        "use_new_terminal": false,
+        "hide": "never"
+    }
+]
