@@ -26,65 +26,20 @@ describe('InfiniteCanvas', () => {
         expect(screen.getByTestId('infinite-canvas')).toBeInTheDocument();
     });
 
-    it('starts in pan mode by default', () => {
-        render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        expect(modeButton).toBeInTheDocument();
-    });
-
-    it('toggles between pan and draw mode', () => {
-        render(<InfiniteCanvas />);
-        const toggleButton = screen.getByTestId('toggle-button');
-
-        // Initially should show Hand icon in pan mode
-        expect(toggleButton.querySelector('svg')).toHaveAttribute(
-            'aria-label',
-            'pan-mode',
-        );
-
-        // Click to switch to draw mode
-        fireEvent.click(toggleButton);
-        expect(toggleButton.querySelector('svg')).toHaveAttribute(
-            'aria-label',
-            'draw-mode',
-        );
-
-        // Click again to switch back to pan mode
-        fireEvent.click(toggleButton);
-        expect(toggleButton.querySelector('svg')).toHaveAttribute(
-            'aria-label',
-            'pan-mode',
-        );
-    });
-
     it('buttons container has correct responsive classes', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode to show all buttons
 
         const buttonContainer = modeButton.parentElement;
         expect(buttonContainer).toHaveClass('flex', 'sm:flex-row', 'flex-col');
     });
 
-    it('shows drawing controls only in draw mode', () => {
-        render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-
-        // Initially, color picker and undo button should not be visible
-        expect(screen.queryByTestId('color-picker')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('undo')).not.toBeInTheDocument();
-
-        // Switch to draw mode
-        fireEvent.click(modeButton);
-
-        // Now drawing controls should be visible
-        expect(screen.getByTestId('color-picker')).toBeInTheDocument();
-        expect(screen.getByTestId('undo')).toBeInTheDocument();
-    });
-
     it('handles mouse events for panning', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
+        const modeButton = screen.getByTestId('pan-button');
+        fireEvent.click(modeButton);
 
         // Simulate panning
         fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
@@ -97,44 +52,25 @@ describe('InfiniteCanvas', () => {
         expect(canvas).toHaveClass('cursor-grabbing');
     });
 
-    it('handles mouse events for drawing', () => {
-        render(<InfiniteCanvas />);
-        const canvas = screen.getByTestId('infinite-canvas');
-        const modeButton = screen.getByTestId('toggle-button');
-
-        // Switch to draw mode
-        fireEvent.click(modeButton);
-
-        // Check if cursor style changes
-        expect(canvas).toHaveClass('cursor-crosshair');
-
-        // Simulate drawing
-        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
-        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
-        fireEvent.mouseUp(canvas);
-    });
-
     it('handles undo functionality', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton);
 
         const undoButton = screen.getByTestId('undo');
-        expect(undoButton).toHaveClass('disabled:opacity-50'); // Should be disabled initially
+        // Initially the undo button should be disabled
+        expect(undoButton).toBeDisabled();
 
-        // Simulate drawing
+        // Simulate drawing (we're in drawing mode by default now)
         const canvas = screen.getByTestId('infinite-canvas');
         fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
         fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
         fireEvent.mouseUp(canvas);
 
-        expect(undoButton).not.toBeDisabled(); // Should be enabled after drawing
+        // After drawing, undo button should be enabled
+        expect(undoButton).not.toBeDisabled();
     });
 
     it('handles color picker changes', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton);
 
         const colorPicker = screen.getByTestId('color-picker');
         fireEvent.change(colorPicker, { target: { value: '#ff0000' } });
@@ -167,6 +103,8 @@ describe('InfiniteCanvas Touch Events', () => {
     it('handles touch events for panning', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
+        const modeButton = screen.getByTestId('pan-button');
+        fireEvent.click(modeButton);
 
         // Simulate touch panning
         fireEvent.touchStart(canvas, {
@@ -184,10 +122,6 @@ describe('InfiniteCanvas Touch Events', () => {
     it('handles touch events for drawing', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
-        const modeButton = screen.getByTestId('toggle-button');
-
-        // Switch to draw mode
-        fireEvent.click(modeButton);
 
         // Check if cursor style changes
         expect(canvas).toHaveClass('cursor-crosshair');
@@ -205,6 +139,8 @@ describe('InfiniteCanvas Touch Events', () => {
     it('handles multi-touch interactions correctly', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
+        const modeButton = screen.getByTestId('pan-button');
+        fireEvent.click(modeButton);
 
         // Simulate multi-touch interaction
         fireEvent.touchStart(canvas, {
@@ -225,10 +161,6 @@ describe('InfiniteCanvas Touch Events', () => {
     it('maintains drawing state through touch interactions', () => {
         render(<InfiniteCanvas />);
         const canvas = screen.getByTestId('infinite-canvas');
-        const modeButton = screen.getByTestId('toggle-button');
-
-        // Switch to draw mode
-        fireEvent.click(modeButton);
 
         // Start drawing
         fireEvent.touchStart(canvas, {
@@ -259,7 +191,7 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('redo button should be disabled initially', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode
 
         const redoButton = screen.getByTestId('redo');
@@ -268,7 +200,7 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('redo button should be enabled after an undo operation', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw something
@@ -288,7 +220,7 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('redo button should be disabled after redoing all available actions', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw something
@@ -311,7 +243,7 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('handles Ctrl+Y keyboard shortcut for redo', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw something
@@ -332,7 +264,7 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('handles Shift+Ctrl+Z keyboard shortcut for redo', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw something
@@ -353,8 +285,6 @@ describe('InfiniteCanvas Redo Functionality', () => {
 
     it('clears redo stack when new drawing is made after undo', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton); // Switch to draw mode
 
         const canvas = screen.getByTestId('infinite-canvas');
 
@@ -385,8 +315,6 @@ describe('InfiniteCanvas Eraser Undo/Redo', () => {
 
     it('should allow undo and redo of erased lines', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw a line
         const canvas = screen.getByTestId('infinite-canvas');
@@ -416,8 +344,6 @@ describe('InfiniteCanvas Eraser Undo/Redo', () => {
 
     it('should properly handle multiple undo/redo operations with eraser', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton); // Switch to draw mode
 
         // Draw multiple lines
         const canvas = screen.getByTestId('infinite-canvas');
@@ -459,8 +385,6 @@ describe('InfiniteCanvas Eraser Undo/Redo', () => {
 
     it('should clear redo stack when drawing after erasing and undoing', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton); // Switch to draw mode
 
         const canvas = screen.getByTestId('infinite-canvas');
 
@@ -495,8 +419,6 @@ describe('InfiniteCanvas Eraser Undo/Redo', () => {
 
     it('should handle keyboard shortcuts for undo/redo after erasing', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
-        fireEvent.click(modeButton); // Switch to draw mode
 
         const canvas = screen.getByTestId('infinite-canvas');
 

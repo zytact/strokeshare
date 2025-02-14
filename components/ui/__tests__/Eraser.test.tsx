@@ -61,7 +61,7 @@ describe('Eraser', () => {
             render(<InfiniteCanvas />);
 
             // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
+            const modeButton = screen.getByTestId('pan-button');
             fireEvent.click(modeButton);
 
             // Enable eraser mode
@@ -89,7 +89,7 @@ describe('Eraser', () => {
             render(<InfiniteCanvas />);
 
             // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
+            const modeButton = screen.getByTestId('pan-button');
             fireEvent.click(modeButton);
 
             // Color picker should be visible initially
@@ -109,7 +109,7 @@ describe('Eraser', () => {
             render(<InfiniteCanvas />);
 
             // Switch to drawing mode
-            const modeButton = screen.getByTestId('toggle-button');
+            const modeButton = screen.getByTestId('pan-button');
             fireEvent.click(modeButton);
 
             // Enable eraser mode
@@ -130,7 +130,7 @@ describe('Eraser', () => {
         it('handles touch events in eraser mode', () => {
             render(<InfiniteCanvas />);
             const canvas = screen.getByTestId('infinite-canvas');
-            const modeButton = screen.getByTestId('toggle-button');
+            const modeButton = screen.getByTestId('pan-button');
 
             // Switch to draw mode
             fireEvent.click(modeButton);

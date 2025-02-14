@@ -13,8 +13,8 @@ type LineStore = {
 
 export const useLineStore = create<LineStore>((set) => ({
     lines: [],
-    history: [],
-    historyIndex: -1,
+    history: [[]], // Initialize with an empty state
+    historyIndex: 0, // Start at the initial empty state
     addLine: (line) =>
         set((state) => {
             const newLines = [...state.lines, line];
@@ -36,7 +36,7 @@ export const useLineStore = create<LineStore>((set) => ({
         }),
     undo: () =>
         set((state) => {
-            if (state.historyIndex <= 0) return state;
+            if (state.historyIndex < 0) return state;
             const newIndex = state.historyIndex - 1;
             return {
                 lines: state.history[newIndex] || [],
