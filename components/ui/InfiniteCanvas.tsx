@@ -5,14 +5,14 @@ import { useLineStore, useEraserStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import Clear from '@/components/ui/Clear';
-import { Undo, Hand, SquarePen, Redo } from 'lucide-react';
+import { Undo, Hand, Redo } from 'lucide-react';
 import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
     const { theme } = useTheme();
     const [eraserPath, setEraserPath] = useState<Point[]>([]);
     const [isPanning, setIsPanning] = useState(false);
-    const [isDrawingMode, setIsDrawingMode] = useState(false);
+    const [isDrawingMode, setIsDrawingMode] = useState(true);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
     const {
@@ -278,47 +278,40 @@ export default function InfiniteCanvas() {
     return (
         <div className="relative h-full w-full">
             <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 sm:flex-row">
-                <Button onClick={toggleMode} data-testid="toggle-button">
-                    {isDrawingMode ? (
-                        <SquarePen className="h-4 w-4" aria-label="draw-mode" />
-                    ) : (
-                        <Hand className="h-4 w-4" aria-label="pan-mode" />
-                    )}
+                <Button
+                    onClick={toggleMode}
+                    data-testid="pan-button"
+                    variant={!isDrawingMode ? 'secondary' : 'default'}
+                >
+                    <Hand className="h-4 w-4" aria-label="pan-mode" />
                 </Button>
-                {isDrawingMode && (
-                    <>
-                        <Button
-                            onClick={handleUndo}
-                            disabled={historyIndex <= 0}
-                            data-testid="undo"
-                        >
-                            <Undo className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                            onClick={handleRedo}
-                            disabled={historyIndex >= history.length - 1}
-                            data-testid="redo"
-                        >
-                            <Redo className="h-4 w-4" />
-                        </Button>
-                        <Clear />
-                        <Eraser />
-                        {!isEraserMode && (
-                            <Button className="backdrop-blur">
-                                <input
-                                    id="colorPicker"
-                                    type="color"
-                                    data-testid="color-picker"
-                                    value={currentColor}
-                                    onChange={(e) =>
-                                        setCurrentColor(e.target.value)
-                                    }
-                                    className="h-6 w-6 cursor-pointer rounded-md bg-transparent"
-                                />
-                            </Button>
-                        )}
-                    </>
+                <Button
+                    onClick={handleUndo}
+                    disabled={historyIndex <= 0}
+                    data-testid="undo"
+                >
+                    <Undo className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    data-testid="redo"
+                >
+                    <Redo className="h-4 w-4" />
+                </Button>
+                <Clear />
+                <Eraser />
+                {!isEraserMode && (
+                    <Button className="backdrop-blur">
+                        <input
+                            id="colorPicker"
+                            type="color"
+                            data-testid="color-picker"
+                            value={currentColor}
+                            onChange={(e) => setCurrentColor(e.target.value)}
+                            className="h-6 w-6 cursor-pointer rounded-md bg-transparent"
+                        />
+                    </Button>
                 )}
             </div>
             <div

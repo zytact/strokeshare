@@ -16,7 +16,7 @@ describe('Clear', () => {
     });
     it('handles clear functionality', () => {
         render(<InfiniteCanvas />);
-        const modeButton = screen.getByTestId('toggle-button');
+        const modeButton = screen.getByTestId('pan-button');
         fireEvent.click(modeButton);
 
         // Should be disabled at first
