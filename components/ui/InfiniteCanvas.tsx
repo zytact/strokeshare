@@ -278,7 +278,11 @@ export default function InfiniteCanvas() {
     return (
         <div className="relative h-full w-full">
             <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 sm:flex-row">
-                <Button onClick={toggleMode} data-testid="pan-button">
+                <Button
+                    onClick={toggleMode}
+                    data-testid="pan-button"
+                    variant={!isDrawingMode ? 'secondary' : 'default'}
+                >
                     <Hand className="h-4 w-4" aria-label="pan-mode" />
                 </Button>
                 <Button
