@@ -9,7 +9,7 @@ import { Undo, Hand, Redo } from 'lucide-react';
 import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
-    const { theme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const [eraserPath, setEraserPath] = useState<Point[]>([]);
     const [isPanning, setIsPanning] = useState(false);
     const [isDrawingMode, setIsDrawingMode] = useState(true);
@@ -28,14 +28,14 @@ export default function InfiniteCanvas() {
     const [currentLine, setCurrentLine] = useState<Point[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentColor, setCurrentColor] = useState(() =>
-        theme === 'dark' ? '#ffffff' : '#000000',
+        resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        setCurrentColor(theme === 'dark' ? '#ffffff' : '#000000');
-    }, [theme]);
+        setCurrentColor(resolvedTheme === 'dark' ? '#ffffff' : '#000000');
+    }, [resolvedTheme]);
 
     // Handle canvas resizing
     useEffect(() => {
