@@ -15,6 +15,7 @@ export default function InfiniteCanvas() {
     const [isDrawingMode, setIsDrawingMode] = useState(true);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+    const previousDrawingMode = useRef(true);
     const {
         lines,
         addLine,
@@ -71,10 +72,26 @@ export default function InfiniteCanvas() {
                     handleRedo();
                 }
             }
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                setIsDrawingMode(false);
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                setIsDrawingMode(previousDrawingMode.current);
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
     }, [handleUndo, handleRedo]);
 
     // Handle panning and drawing
