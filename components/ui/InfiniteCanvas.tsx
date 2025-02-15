@@ -31,6 +31,7 @@ export default function InfiniteCanvas() {
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
+    const [hoveredLines, setHoveredLines] = useState<Set<number>>(new Set());
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -94,6 +95,57 @@ export default function InfiniteCanvas() {
         };
     }, [handleUndo, handleRedo]);
 
+    const pointToLineDistance = (
+        point: Point,
+        lineStart: Point,
+        lineEnd: Point,
+    ) => {
+        const A = point.x - lineStart.x;
+        const B = point.y - lineStart.y;
+        const C = lineEnd.x - lineStart.x;
+        const D = lineEnd.y - lineStart.y;
+
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+
+        if (lenSq !== 0) param = dot / lenSq;
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = lineStart.x;
+            yy = lineStart.y;
+        } else if (param > 1) {
+            xx = lineEnd.x;
+            yy = lineEnd.y;
+        } else {
+            xx = lineStart.x + param * C;
+            yy = lineStart.y + param * D;
+        }
+
+        const dx = point.x - xx;
+        const dy = point.y - yy;
+
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const updateHoveredLines = (mouseX: number, mouseY: number) => {
+        lines.forEach((line, lineIndex) => {
+            const isLineHovered = line.points.some((point) => {
+                const distance = Math.sqrt(
+                    Math.pow(point.x - mouseX, 2) +
+                        Math.pow(point.y - mouseY, 2),
+                );
+                return distance <= 100;
+            });
+
+            if (isLineHovered) {
+                setHoveredLines((prev) => new Set([...prev, lineIndex]));
+            }
+        });
+    };
+
     // Handle panning and drawing
     const handleMouseDown = (e: React.MouseEvent) => {
         if (isDrawingMode) {
@@ -147,6 +199,7 @@ export default function InfiniteCanvas() {
                         ...prev,
                         { x: mouseX, y: mouseY },
                     ]);
+                    updateHoveredLines(mouseX, mouseY);
                 }
             } else {
                 const rect = canvasRef.current?.getBoundingClientRect();
@@ -181,6 +234,7 @@ export default function InfiniteCanvas() {
                         ...prev,
                         { x: mouseX, y: mouseY },
                     ]);
+                    updateHoveredLines(mouseX, mouseY);
                 } else {
                     const x = touch.clientX - rect.left + position.x;
                     const y = touch.clientY - rect.top + position.y;
@@ -195,51 +249,54 @@ export default function InfiniteCanvas() {
             if (isEraserMode && eraserPath.length > 0) {
                 const updatedLines = lines
                     .map((line) => {
-                        const filteredPoints = line.points.filter((point) => {
-                            // Check if point is near any point in the eraser path
-                            return !eraserPath.some((eraserPoint) => {
-                                const distance = Math.sqrt(
-                                    Math.pow(point.x - eraserPoint.x, 2) +
-                                        Math.pow(point.y - eraserPoint.y, 2),
+                        // Split the line into segments and check each segment
+                        const segments: Point[][] = [];
+                        let currentSegment: Point[] = [line.points[0]];
+
+                        for (let i = 1; i < line.points.length; i++) {
+                            const point = line.points[i];
+
+                            // Check if this point intersects with any eraser segment
+                            let intersects = false;
+                            for (let j = 1; j < eraserPath.length; j++) {
+                                const eraserStart = eraserPath[j - 1];
+                                const eraserEnd = eraserPath[j];
+
+                                // Calculate distance from point to eraser line segment
+                                const distance = pointToLineDistance(
+                                    point,
+                                    eraserStart,
+                                    eraserEnd,
                                 );
-                                return distance <= 40; // eraser radius
-                            });
-                        });
-                        return { ...line, points: filteredPoints };
+
+                                if (distance < 20) {
+                                    // Adjust this threshold as needed
+                                    intersects = true;
+                                    break;
+                                }
+                            }
+
+                            if (intersects) {
+                                if (currentSegment.length > 1) {
+                                    segments.push([...currentSegment]);
+                                }
+                                currentSegment = [];
+                            } else {
+                                currentSegment.push(point);
+                            }
+                        }
+
+                        if (currentSegment.length > 1) {
+                            segments.push(currentSegment);
+                        }
+
+                        // Combine all remaining segments
+                        return segments.map((segment) => ({
+                            points: segment,
+                            color: line.color,
+                        }));
                     })
-                    .filter((line) => line.points.length > 1);
-
-                updateLines(updatedLines);
-                setEraserPath([]); // Reset eraser path
-            } else {
-                addLine({ points: currentLine, color: currentColor });
-            }
-            setCurrentLine([]);
-            setIsDrawing(false);
-        }
-        setIsPanning(false);
-    };
-
-    const toggleMode = () => {
-        setIsDrawingMode(!isDrawingMode);
-    };
-
-    const handleTouchEnd = () => {
-        if (isDrawing) {
-            if (isEraserMode && eraserPath.length > 0) {
-                const updatedLines = lines
-                    .map((line) => {
-                        const filteredPoints = line.points.filter((point) => {
-                            return !eraserPath.some((eraserPoint) => {
-                                const distance = Math.sqrt(
-                                    Math.pow(point.x - eraserPoint.x, 2) +
-                                        Math.pow(point.y - eraserPoint.y, 2),
-                                );
-                                return distance <= 40;
-                            });
-                        });
-                        return { ...line, points: filteredPoints };
-                    })
+                    .flat()
                     .filter((line) => line.points.length > 1);
 
                 updateLines(updatedLines);
@@ -249,9 +306,16 @@ export default function InfiniteCanvas() {
             }
             setCurrentLine([]);
             setIsDrawing(false);
+            setHoveredLines(new Set());
         }
         setIsPanning(false);
     };
+
+    const toggleMode = () => {
+        setIsDrawingMode(!isDrawingMode);
+    };
+
+    const handleTouchEnd = handleMouseUp;
 
     // Draw all lines with pan offset
     const drawLines = (ctx: CanvasRenderingContext2D) => {
@@ -260,11 +324,13 @@ export default function InfiniteCanvas() {
         // Keep the negative sign so the canvas moves as expected
         ctx.translate(-position.x, -position.y);
 
-        lines.forEach((line) => {
+        lines.forEach((line, lineIndex) => {
             if (line.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = line.color;
             ctx.lineWidth = 2;
+            ctx.globalAlpha =
+                isEraserMode && hoveredLines.has(lineIndex) ? 0.3 : 1;
             ctx.moveTo(line.points[0].x, line.points[0].y);
             for (let i = 1; i < line.points.length; i++) {
                 ctx.lineTo(line.points[i].x, line.points[i].y);
@@ -291,6 +357,12 @@ export default function InfiniteCanvas() {
         if (ctx) drawLines(ctx);
     }, [lines, currentLine, position, drawLines]);
 
+    useEffect(() => {
+        if (!isEraserMode) {
+            setHoveredLines(new Set());
+        }
+    }, [isEraserMode]);
+
     return (
         <div className="relative h-full w-full">
             <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 sm:flex-row">
@@ -316,7 +388,7 @@ export default function InfiniteCanvas() {
                     </Button>
                 )}
             </div>
-            <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+            <div className="fixed bottom-4 left-4 z-10 flex gap-2">
                 <Button
                     onClick={handleUndo}
                     disabled={historyIndex <= 0}
