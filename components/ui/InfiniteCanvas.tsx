@@ -96,22 +96,19 @@ export default function InfiniteCanvas() {
     }, [handleUndo, handleRedo]);
 
     const updateHoveredLines = (mouseX: number, mouseY: number) => {
-        const newHoveredLines = new Set<number>();
-
         lines.forEach((line, lineIndex) => {
             const isLineHovered = line.points.some((point) => {
                 const distance = Math.sqrt(
                     Math.pow(point.x - mouseX, 2) +
                         Math.pow(point.y - mouseY, 2),
                 );
-                return distance <= 40;
+                return distance <= 100;
             });
 
             if (isLineHovered) {
-                newHoveredLines.add(lineIndex);
+                setHoveredLines((prev) => new Set([...prev, lineIndex]));
             }
         });
-        setHoveredLines(newHoveredLines);
     };
 
     // Handle panning and drawing
@@ -224,7 +221,7 @@ export default function InfiniteCanvas() {
                                     Math.pow(point.x - eraserPoint.x, 2) +
                                         Math.pow(point.y - eraserPoint.y, 2),
                                 );
-                                return distance <= 40; // eraser radius
+                                return distance <= 100; // eraser radius
                             });
                         });
                         return { ...line, points: filteredPoints };
@@ -258,7 +255,7 @@ export default function InfiniteCanvas() {
                                     Math.pow(point.x - eraserPoint.x, 2) +
                                         Math.pow(point.y - eraserPoint.y, 2),
                                 );
-                                return distance <= 40;
+                                return distance <= 100;
                             });
                         });
                         return { ...line, points: filteredPoints };
