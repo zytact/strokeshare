@@ -30,7 +30,7 @@ export default function InfiniteCanvas() {
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
-    const containerRef = useRef<HTMLDivElement>(null);
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -39,12 +39,11 @@ export default function InfiniteCanvas() {
 
     // Handle canvas resizing
     useEffect(() => {
-        const container = containerRef.current;
         const canvas = canvasRef.current;
-        if (!container || !canvas) return;
+        if (!canvas) return;
 
         const updateCanvasSize = () => {
-            const rect = container.getBoundingClientRect();
+            const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
         };
@@ -52,7 +51,7 @@ export default function InfiniteCanvas() {
         updateCanvasSize();
 
         const resizeObserver = new ResizeObserver(updateCanvasSize);
-        resizeObserver.observe(container);
+        resizeObserver.observe(canvas);
 
         return () => resizeObserver.disconnect();
     }, []);
@@ -314,8 +313,8 @@ export default function InfiniteCanvas() {
                     </Button>
                 )}
             </div>
-            <div
-                ref={containerRef}
+            <canvas
+                ref={canvasRef}
                 className={`h-full w-full touch-none overflow-hidden ${
                     isDrawingMode
                         ? 'cursor-crosshair'
@@ -331,9 +330,7 @@ export default function InfiniteCanvas() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
-            >
-                <canvas ref={canvasRef} className="h-full w-full" />
-            </div>
+            />
         </div>
     );
 }
