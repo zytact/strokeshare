@@ -301,20 +301,6 @@ export default function InfiniteCanvas() {
                 >
                     <Hand className="h-4 w-4" aria-label="pan-mode" />
                 </Button>
-                <Button
-                    onClick={handleUndo}
-                    disabled={historyIndex <= 0}
-                    data-testid="undo"
-                >
-                    <Undo className="h-4 w-4" />
-                </Button>
-                <Button
-                    onClick={handleRedo}
-                    disabled={historyIndex >= history.length - 1}
-                    data-testid="redo"
-                >
-                    <Redo className="h-4 w-4" />
-                </Button>
                 <Clear />
                 <Eraser />
                 {!isEraserMode && (
@@ -329,6 +315,22 @@ export default function InfiniteCanvas() {
                         />
                     </Button>
                 )}
+            </div>
+            <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+                <Button
+                    onClick={handleUndo}
+                    disabled={historyIndex <= 0}
+                    data-testid="undo"
+                >
+                    <Undo className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    data-testid="redo"
+                >
+                    <Redo className="h-4 w-4" />
+                </Button>
             </div>
             <canvas
                 ref={canvasRef}
