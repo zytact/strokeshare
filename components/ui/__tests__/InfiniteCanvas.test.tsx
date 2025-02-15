@@ -444,3 +444,77 @@ describe('InfiniteCanvas Eraser Undo/Redo', () => {
         expect(redoButton).toBeDisabled();
     });
 });
+
+describe('InfiniteCanvas Space Bar Pan Mode', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('should enter pan mode when space bar is pressed', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Initially should be in drawing mode
+        expect(canvas).toHaveClass('cursor-crosshair');
+
+        // Press space bar
+        fireEvent.keyDown(window, { code: 'Space' });
+
+        // Should switch to pan mode
+        expect(canvas).toHaveClass('cursor-grab');
+    });
+
+    it('should return to previous mode when space bar is released', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Press space bar
+        fireEvent.keyDown(window, { code: 'Space' });
+
+        // Release space bar
+        fireEvent.keyUp(window, { code: 'Space' });
+
+        // Should return to drawing mode
+        expect(canvas).toHaveClass('cursor-crosshair');
+    });
+
+    it('should handle panning while space bar is pressed', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Press space bar
+        fireEvent.keyDown(window, { code: 'Space' });
+
+        // Simulate panning
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+
+        // Should show grabbing cursor while panning
+        expect(canvas).toHaveClass('cursor-grabbing');
+
+        fireEvent.mouseUp(canvas);
+
+        // Should return to grab cursor after releasing mouse
+        expect(canvas).toHaveClass('cursor-grab');
+
+        // Release space bar
+        fireEvent.keyUp(window, { code: 'Space' });
+
+        // Should return to drawing mode
+        expect(canvas).toHaveClass('cursor-crosshair');
+    });
+
+    it('should prevent default space bar behavior', () => {
+        render(<InfiniteCanvas />);
+
+        // Create a mock event with preventDefault
+        const mockEvent = new KeyboardEvent('keydown', { code: 'Space' });
+        const preventDefaultSpy = vi.spyOn(mockEvent, 'preventDefault');
+
+        // Dispatch the event
+        window.dispatchEvent(mockEvent);
+
+        // Check if preventDefault was called
+        expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+});
