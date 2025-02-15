@@ -5,7 +5,7 @@ import { useLineStore, useEraserStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import Clear from '@/components/ui/Clear';
-import { Undo, Hand, Redo } from 'lucide-react';
+import { ZoomIn, ZoomOut, Undo, Hand, Redo } from 'lucide-react';
 import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
@@ -32,6 +32,7 @@ export default function InfiniteCanvas() {
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
     const [hoveredLines, setHoveredLines] = useState<Set<number>>(new Set());
+    const [scale, setScale] = useState(1);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -95,6 +96,20 @@ export default function InfiniteCanvas() {
         };
     }, [handleUndo, handleRedo]);
 
+    useEffect(() => {
+        const preventDefault = (e: WheelEvent) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        };
+
+        window.addEventListener('wheel', preventDefault, { passive: false });
+
+        return () => {
+            window.removeEventListener('wheel', preventDefault);
+        };
+    });
+
     const pointToLineDistance = (
         point: Point,
         lineStart: Point,
@@ -152,8 +167,8 @@ export default function InfiniteCanvas() {
             setIsDrawing(true);
             const rect = canvasRef.current?.getBoundingClientRect();
             if (rect) {
-                const x = e.clientX - rect.left + position.x;
-                const y = e.clientY - rect.top + position.y;
+                const x = (e.clientX - rect.left + position.x) / scale;
+                const y = (e.clientY - rect.top + position.y) / scale;
                 setCurrentLine([{ x, y }]);
             }
         } else {
@@ -193,8 +208,8 @@ export default function InfiniteCanvas() {
             if (isEraserMode) {
                 const rect = canvasRef.current?.getBoundingClientRect();
                 if (rect) {
-                    const mouseX = e.clientX - rect.left + position.x;
-                    const mouseY = e.clientY - rect.top + position.y;
+                    const mouseX = (e.clientX - rect.left + position.x) / scale;
+                    const mouseY = (e.clientY - rect.top + position.y) / scale;
                     setEraserPath((prev) => [
                         ...prev,
                         { x: mouseX, y: mouseY },
@@ -204,8 +219,8 @@ export default function InfiniteCanvas() {
             } else {
                 const rect = canvasRef.current?.getBoundingClientRect();
                 if (rect) {
-                    const x = e.clientX - rect.left + position.x;
-                    const y = e.clientY - rect.top + position.y;
+                    const x = (e.clientX - rect.left + position.x) / scale;
+                    const y = (e.clientY - rect.top + position.y) / scale;
                     setCurrentLine((prev) => [...prev, { x, y }]);
                 }
             }
@@ -228,16 +243,18 @@ export default function InfiniteCanvas() {
             if (rect) {
                 const touch = e.touches[0];
                 if (isEraserMode) {
-                    const mouseX = touch.clientX - rect.left + position.x;
-                    const mouseY = touch.clientY - rect.top + position.y;
+                    const mouseX =
+                        (touch.clientX - rect.left + position.x) / scale;
+                    const mouseY =
+                        (touch.clientY - rect.top + position.y) / scale;
                     setEraserPath((prev) => [
                         ...prev,
                         { x: mouseX, y: mouseY },
                     ]);
                     updateHoveredLines(mouseX, mouseY);
                 } else {
-                    const x = touch.clientX - rect.left + position.x;
-                    const y = touch.clientY - rect.top + position.y;
+                    const x = (touch.clientX - rect.left + position.x) / scale;
+                    const y = (touch.clientY - rect.top + position.y) / scale;
                     setCurrentLine((prev) => [...prev, { x, y }]);
                 }
             }
@@ -269,7 +286,7 @@ export default function InfiniteCanvas() {
                                     eraserEnd,
                                 );
 
-                                if (distance < 20) {
+                                if (distance < 100) {
                                     // Adjust this threshold as needed
                                     intersects = true;
                                     break;
@@ -311,24 +328,58 @@ export default function InfiniteCanvas() {
         setIsPanning(false);
     };
 
+    const handleTouchEnd = handleMouseUp;
+
     const toggleMode = () => {
         setIsDrawingMode(!isDrawingMode);
     };
 
-    const handleTouchEnd = handleMouseUp;
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.min(Math.max(scale * delta, 0.1), 5);
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const newPosition = {
+                x: position.x + (mouseX / scale - mouseX / newScale) * newScale,
+                y: position.y + (mouseY / scale - mouseY / newScale) * newScale,
+            };
+
+            setScale(newScale);
+            setPosition(newPosition);
+        }
+    };
+
+    const zoomIn = () => {
+        setScale((prev) => prev + 0.05);
+    };
+    const zoomOut = () => {
+        setScale((prev) => prev - 0.05);
+    };
+
+    const formatScalePercentage = (scale: number) => {
+        return `${Math.round(scale * 100)}%`;
+    };
 
     // Draw all lines with pan offset
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const drawLines = (ctx: CanvasRenderingContext2D) => {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.save();
         // Keep the negative sign so the canvas moves as expected
         ctx.translate(-position.x, -position.y);
+        ctx.scale(scale, scale);
 
         lines.forEach((line, lineIndex) => {
             if (line.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = line.color;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 / scale;
             ctx.globalAlpha =
                 isEraserMode && hoveredLines.has(lineIndex) ? 0.3 : 1;
             ctx.moveTo(line.points[0].x, line.points[0].y);
@@ -341,7 +392,7 @@ export default function InfiniteCanvas() {
         if (currentLine.length >= 2) {
             ctx.beginPath();
             ctx.strokeStyle = currentColor;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 / scale;
             ctx.moveTo(currentLine[0].x, currentLine[0].y);
             for (let i = 1; i < currentLine.length; i++) {
                 ctx.lineTo(currentLine[i].x, currentLine[i].y);
@@ -403,6 +454,31 @@ export default function InfiniteCanvas() {
                 >
                     <Redo className="h-4 w-4" />
                 </Button>
+                <div className="mx-2 h-8 w-px bg-border" /> {/* Separator */}
+                <Button
+                    onClick={zoomOut}
+                    data-testid="zoom-out"
+                    disabled={scale <= 0.1}
+                    variant="outline"
+                    size="icon"
+                >
+                    <ZoomOut className="h-4 w-4" />
+                </Button>
+                <div
+                    className="flex min-w-[4rem] select-none flex-row items-center justify-center text-center text-sm"
+                    data-testid="zoom-percentage"
+                >
+                    {formatScalePercentage(scale)}
+                </div>
+                <Button
+                    onClick={zoomIn}
+                    disabled={scale >= 5}
+                    data-testid="zoom-in"
+                    variant="outline"
+                    size="icon"
+                >
+                    <ZoomIn className="h-4 w-4" />
+                </Button>
             </div>
             <canvas
                 ref={canvasRef}
@@ -421,6 +497,7 @@ export default function InfiniteCanvas() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                onWheel={handleWheel}
             />
         </div>
     );
