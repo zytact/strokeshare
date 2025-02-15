@@ -518,3 +518,108 @@ describe('InfiniteCanvas Space Bar Pan Mode', () => {
         expect(preventDefaultSpy).toHaveBeenCalled();
     });
 });
+
+describe('InfiniteCanvas Zoom Functionality', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('should render zoom controls', () => {
+        render(<InfiniteCanvas />);
+
+        // Check if zoom controls are present
+        expect(screen.getByTestId('zoom-in')).toBeInTheDocument();
+        expect(screen.getByTestId('zoom-out')).toBeInTheDocument();
+        expect(screen.getByTestId('zoom-percentage')).toBeInTheDocument();
+    });
+
+    it('should display initial zoom level as 100%', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(zoomDisplay).toHaveTextContent('100%');
+    });
+
+    it('should increase zoom level when zoom in button is clicked', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomInButton = screen.getByTestId('zoom-in');
+        fireEvent.click(zoomInButton);
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(zoomDisplay).toHaveTextContent('105%');
+    });
+
+    it('should decrease zoom level when zoom out button is clicked', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomOutButton = screen.getByTestId('zoom-out');
+        fireEvent.click(zoomOutButton);
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(zoomDisplay).toHaveTextContent('95%');
+    });
+
+    it('should handle ctrl + wheel zoom in', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        fireEvent.wheel(canvas, {
+            deltaY: -100,
+            ctrlKey: true,
+            clientX: 100,
+            clientY: 100,
+        });
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(zoomDisplay).toHaveTextContent('110%');
+    });
+
+    it('should handle ctrl + wheel zoom out', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        fireEvent.wheel(canvas, {
+            deltaY: 100,
+            ctrlKey: true,
+            clientX: 100,
+            clientY: 100,
+        });
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(zoomDisplay).toHaveTextContent('90%');
+    });
+
+    it('should respect minimum zoom limit', () => {
+        render(<InfiniteCanvas />);
+        const zoomOutButton = screen.getByTestId('zoom-out');
+
+        // Click multiple times to try to go below minimum
+        for (let i = 0; i < 20; i++) {
+            fireEvent.click(zoomOutButton);
+        }
+
+        const zoomDisplay = screen.getByTestId('zoom-percentage');
+        expect(
+            Number.parseInt(zoomDisplay.textContent!),
+        ).toBeGreaterThanOrEqual(10);
+    });
+
+    it('should maintain drawn lines after zooming', () => {
+        render(<InfiniteCanvas />);
+        const canvas = screen.getByTestId('infinite-canvas');
+
+        // Draw a line
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Zoom in
+        const zoomInButton = screen.getByTestId('zoom-in');
+        fireEvent.click(zoomInButton);
+
+        // Check if undo is still available (indicating the line is still there)
+        const undoButton = screen.getByTestId('undo');
+        expect(undoButton).not.toBeDisabled();
+    });
+});
