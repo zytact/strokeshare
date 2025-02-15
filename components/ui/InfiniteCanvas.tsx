@@ -31,6 +31,7 @@ export default function InfiniteCanvas() {
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
+    const [hoveredLines, setHoveredLines] = useState<Set<number>>(new Set());
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -94,6 +95,25 @@ export default function InfiniteCanvas() {
         };
     }, [handleUndo, handleRedo]);
 
+    const updateHoveredLines = (mouseX: number, mouseY: number) => {
+        const newHoveredLines = new Set<number>();
+
+        lines.forEach((line, lineIndex) => {
+            const isLineHovered = line.points.some((point) => {
+                const distance = Math.sqrt(
+                    Math.pow(point.x - mouseX, 2) +
+                        Math.pow(point.y - mouseY, 2),
+                );
+                return distance <= 40;
+            });
+
+            if (isLineHovered) {
+                newHoveredLines.add(lineIndex);
+            }
+        });
+        setHoveredLines(newHoveredLines);
+    };
+
     // Handle panning and drawing
     const handleMouseDown = (e: React.MouseEvent) => {
         if (isDrawingMode) {
@@ -147,6 +167,7 @@ export default function InfiniteCanvas() {
                         ...prev,
                         { x: mouseX, y: mouseY },
                     ]);
+                    updateHoveredLines(mouseX, mouseY);
                 }
             } else {
                 const rect = canvasRef.current?.getBoundingClientRect();
@@ -181,6 +202,7 @@ export default function InfiniteCanvas() {
                         ...prev,
                         { x: mouseX, y: mouseY },
                     ]);
+                    updateHoveredLines(mouseX, mouseY);
                 } else {
                     const x = touch.clientX - rect.left + position.x;
                     const y = touch.clientY - rect.top + position.y;
@@ -216,6 +238,7 @@ export default function InfiniteCanvas() {
             }
             setCurrentLine([]);
             setIsDrawing(false);
+            setHoveredLines(new Set());
         }
         setIsPanning(false);
     };
@@ -249,6 +272,7 @@ export default function InfiniteCanvas() {
             }
             setCurrentLine([]);
             setIsDrawing(false);
+            setHoveredLines(new Set());
         }
         setIsPanning(false);
     };
@@ -260,11 +284,13 @@ export default function InfiniteCanvas() {
         // Keep the negative sign so the canvas moves as expected
         ctx.translate(-position.x, -position.y);
 
-        lines.forEach((line) => {
+        lines.forEach((line, lineIndex) => {
             if (line.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = line.color;
             ctx.lineWidth = 2;
+            ctx.globalAlpha =
+                isEraserMode && hoveredLines.has(lineIndex) ? 0.3 : 1;
             ctx.moveTo(line.points[0].x, line.points[0].y);
             for (let i = 1; i < line.points.length; i++) {
                 ctx.lineTo(line.points[i].x, line.points[i].y);
@@ -291,6 +317,12 @@ export default function InfiniteCanvas() {
         if (ctx) drawLines(ctx);
     }, [lines, currentLine, position, drawLines]);
 
+    useEffect(() => {
+        if (!isEraserMode) {
+            setHoveredLines(new Set());
+        }
+    }, [isEraserMode]);
+
     return (
         <div className="relative h-full w-full">
             <div className="absolute left-4 top-4 z-10 flex flex-col gap-2 sm:flex-row">
@@ -316,7 +348,7 @@ export default function InfiniteCanvas() {
                     </Button>
                 )}
             </div>
-            <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+            <div className="fixed bottom-4 left-4 z-10 flex gap-2">
                 <Button
                     onClick={handleUndo}
                     disabled={historyIndex <= 0}
