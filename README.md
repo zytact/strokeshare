@@ -4,6 +4,12 @@
 
 - [x] Infinite Canvas
 - [x] Theme Toggle
-- [ ] Basic drawing features
-- [ ]
-- [ ]
+- [x] Basic drawing features
+- [x] Eraser
+- [ ] Width selector
+- [ ] Shapes
+- [ ] Text
+- [ ] Selecting font
+- [ ] Image
+- [ ] Local save state
+- [ ] Export

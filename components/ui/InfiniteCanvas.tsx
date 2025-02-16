@@ -1,5 +1,6 @@
 'use client';
 
+
 import { useRef, useState } from 'react';
 
 export default function InfiniteCanvas() {
@@ -22,10 +23,8 @@ export default function InfiniteCanvas() {
                 x: e.clientX - startPan.x,
                 y: e.clientY - startPan.y,
             });
-        }
-    };
 
-    const handleMouseUp = () => {
+
         setIsPanning(false);
     };
 
