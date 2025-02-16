@@ -5,14 +5,29 @@ import { useLineStore, useEraserStore } from '@/store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import Clear from '@/components/ui/Clear';
-import { ZoomIn, ZoomOut, Undo, Hand, Redo } from 'lucide-react';
+import {
+    ZoomIn,
+    ZoomOut,
+    Undo,
+    Hand,
+    Redo,
+    Square,
+    Circle as CircleIcon,
+    Minus,
+    MoveUpRight,
+    Pencil,
+} from 'lucide-react';
 import Eraser from '@/components/ui/Eraser';
 
 export default function InfiniteCanvas() {
+    type DrawingMode = 'freehand' | 'rectangle' | 'circle' | 'line' | 'arrow';
     const { resolvedTheme } = useTheme();
     const [eraserPath, setEraserPath] = useState<Point[]>([]);
     const [isPanning, setIsPanning] = useState(false);
     const [isDrawingMode, setIsDrawingMode] = useState(true);
+    const [drawingMode, setDrawingMode] = useState<DrawingMode>('freehand');
+    const [shapeStart, setShapeStart] = useState<Point | null>(null);
+    const [previewShape, setPreviewShape] = useState<Point[]>([]);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [startPan, setStartPan] = useState({ x: 0, y: 0 });
     const previousDrawingMode = useRef(true);
@@ -169,7 +184,12 @@ export default function InfiniteCanvas() {
             if (rect) {
                 const x = (e.clientX - rect.left + position.x) / scale;
                 const y = (e.clientY - rect.top + position.y) / scale;
-                setCurrentLine([{ x, y }]);
+                if (drawingMode === 'freehand') {
+                    setCurrentLine([{ x, y }]);
+                } else {
+                    setShapeStart({ x, y });
+                    setPreviewShape([{ x, y }]);
+                }
             }
         } else {
             setIsPanning(true);
@@ -186,7 +206,12 @@ export default function InfiniteCanvas() {
                 const touch = e.touches[0];
                 const x = touch.clientX - rect.left + position.x;
                 const y = touch.clientY - rect.top + position.y;
-                setCurrentLine([{ x, y }]);
+                if (drawingMode === 'freehand') {
+                    setCurrentLine([{ x, y }]);
+                } else {
+                    setShapeStart({ x, y });
+                    setPreviewShape([{ x, y }]);
+                }
             }
         } else {
             setIsPanning(true);
@@ -221,7 +246,44 @@ export default function InfiniteCanvas() {
                 if (rect) {
                     const x = (e.clientX - rect.left + position.x) / scale;
                     const y = (e.clientY - rect.top + position.y) / scale;
-                    setCurrentLine((prev) => [...prev, { x, y }]);
+
+                    if (drawingMode === 'freehand') {
+                        setCurrentLine((prev) => [...prev, { x, y }]);
+                    } else if (shapeStart) {
+                        // Update preview shape based on current mouse position
+                        switch (drawingMode) {
+                            case 'rectangle':
+                                setPreviewShape([
+                                    shapeStart,
+                                    { x: shapeStart.x, y },
+                                    { x, y },
+                                    { x, y: shapeStart.y },
+                                    shapeStart,
+                                ]);
+                                break;
+                            case 'circle':
+                                const radius = Math.sqrt(
+                                    Math.pow(x - shapeStart.x, 2) +
+                                        Math.pow(y - shapeStart.y, 2),
+                                );
+                                const points = generateCirclePoints(
+                                    shapeStart,
+                                    radius,
+                                );
+                                setPreviewShape(points);
+                                break;
+                            case 'line':
+                                setPreviewShape([shapeStart, { x, y }]);
+                                break;
+                            case 'arrow':
+                                const arrowPoints = generateArrowPoints(
+                                    shapeStart,
+                                    { x, y },
+                                );
+                                setPreviewShape(arrowPoints);
+                                break;
+                        }
+                    }
                 }
             }
         }
@@ -255,7 +317,43 @@ export default function InfiniteCanvas() {
                 } else {
                     const x = (touch.clientX - rect.left + position.x) / scale;
                     const y = (touch.clientY - rect.top + position.y) / scale;
-                    setCurrentLine((prev) => [...prev, { x, y }]);
+                    if (drawingMode === 'freehand') {
+                        setCurrentLine((prev) => [...prev, { x, y }]);
+                    } else if (shapeStart) {
+                        // Update preview shape based on current mouse position
+                        switch (drawingMode) {
+                            case 'rectangle':
+                                setPreviewShape([
+                                    shapeStart,
+                                    { x: shapeStart.x, y },
+                                    { x, y },
+                                    { x, y: shapeStart.y },
+                                    shapeStart,
+                                ]);
+                                break;
+                            case 'circle':
+                                const radius = Math.sqrt(
+                                    Math.pow(x - shapeStart.x, 2) +
+                                        Math.pow(y - shapeStart.y, 2),
+                                );
+                                const points = generateCirclePoints(
+                                    shapeStart,
+                                    radius,
+                                );
+                                setPreviewShape(points);
+                                break;
+                            case 'line':
+                                setPreviewShape([shapeStart, { x, y }]);
+                                break;
+                            case 'arrow':
+                                const arrowPoints = generateArrowPoints(
+                                    shapeStart,
+                                    { x, y },
+                                );
+                                setPreviewShape(arrowPoints);
+                                break;
+                        }
+                    }
                 }
             }
         }
@@ -319,7 +417,13 @@ export default function InfiniteCanvas() {
                 updateLines(updatedLines);
                 setEraserPath([]);
             } else {
-                addLine({ points: currentLine, color: currentColor });
+                if (drawingMode === 'freehand') {
+                    addLine({ points: currentLine, color: currentColor });
+                } else if (previewShape.length > 0) {
+                    addLine({ points: previewShape, color: currentColor });
+                    setPreviewShape([]);
+                    setShapeStart(null);
+                }
             }
             setCurrentLine([]);
             setIsDrawing(false);
@@ -366,6 +470,40 @@ export default function InfiniteCanvas() {
         return `${Math.round(scale * 100)}%`;
     };
 
+    const generateCirclePoints = (center: Point, radius: number): Point[] => {
+        const points: Point[] = [];
+        const segments = 40;
+
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * 2 * Math.PI;
+            points.push({
+                x: center.x + radius * Math.cos(angle),
+                y: center.y + radius * Math.sin(angle),
+            });
+        }
+
+        return points;
+    };
+
+    const generateArrowPoints = (start: Point, end: Point): Point[] => {
+        const headSize = 20 / scale; // Adjust arrow head size
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+
+        return [
+            start,
+            end,
+            {
+                x: end.x - headSize * Math.cos(angle - Math.PI / 6),
+                y: end.y - headSize * Math.sin(angle - Math.PI / 6),
+            },
+            end,
+            {
+                x: end.x - headSize * Math.cos(angle + Math.PI / 6),
+                y: end.y - headSize * Math.sin(angle + Math.PI / 6),
+            },
+        ];
+    };
+
     // Draw all lines with pan offset
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const drawLines = (ctx: CanvasRenderingContext2D) => {
@@ -400,6 +538,17 @@ export default function InfiniteCanvas() {
             ctx.stroke();
         }
 
+        if (previewShape.length >= 2) {
+            ctx.beginPath();
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = 2 / scale;
+            ctx.moveTo(previewShape[0].x, previewShape[0].y);
+            for (let i = 1; i < previewShape.length; i++) {
+                ctx.lineTo(previewShape[i].x, previewShape[i].y);
+            }
+            ctx.stroke();
+        }
+
         ctx.restore();
     };
 
@@ -423,6 +572,45 @@ export default function InfiniteCanvas() {
                     variant={!isDrawingMode ? 'secondary' : 'default'}
                 >
                     <Hand className="h-4 w-4" aria-label="pan-mode" />
+                </Button>
+                <Button
+                    onClick={() => setDrawingMode('freehand')}
+                    variant={
+                        drawingMode === 'freehand' ? 'secondary' : 'default'
+                    }
+                    disabled={!isDrawingMode}
+                >
+                    <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={() => setDrawingMode('rectangle')}
+                    variant={
+                        drawingMode === 'rectangle' ? 'secondary' : 'default'
+                    }
+                    disabled={!isDrawingMode}
+                >
+                    <Square className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={() => setDrawingMode('circle')}
+                    variant={drawingMode === 'circle' ? 'secondary' : 'default'}
+                    disabled={!isDrawingMode}
+                >
+                    <CircleIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={() => setDrawingMode('line')}
+                    variant={drawingMode === 'line' ? 'secondary' : 'default'}
+                    disabled={!isDrawingMode}
+                >
+                    <Minus className="h-4 w-4" />
+                </Button>
+                <Button
+                    onClick={() => setDrawingMode('arrow')}
+                    variant={drawingMode === 'arrow' ? 'secondary' : 'default'}
+                    disabled={!isDrawingMode}
+                >
+                    <MoveUpRight className="h-4 w-4" />
                 </Button>
                 <Clear />
                 <Eraser />
