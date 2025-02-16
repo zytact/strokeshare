@@ -1,9 +1,10 @@
-type Point = {
+interface Point {
     x: number;
     y: number;
-};
+}
 
-type Line = {
-    points: Point[];
+interface Line {
+    points: number[];
     color: string;
-};
+    erase: boolean;
+}
