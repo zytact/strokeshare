@@ -13,9 +13,22 @@ vi.mock('next-themes', () => ({
 // Mock window resize
 vi.mock('konva', () => ({
     default: {
-        Stage: vi.fn(),
-        Layer: vi.fn(),
-        Line: vi.fn(),
+        Stage: vi.fn(() => ({
+            on: vi.fn(),
+            off: vi.fn(),
+            getPointerPosition: vi.fn(() => ({ x: 0, y: 0 })),
+            scale: vi.fn(),
+            position: vi.fn(),
+        })),
+        Layer: vi.fn(() => ({
+            add: vi.fn(),
+            batchDraw: vi.fn(),
+        })),
+        Line: vi.fn(() => ({
+            on: vi.fn(),
+            off: vi.fn(),
+            points: vi.fn(),
+        })),
     },
 }));
 
@@ -118,5 +131,62 @@ describe('InfiniteCanvas', () => {
         // Check initial button states
         expect(handButton).toHaveClass('bg-primary');
         expect(eraserButton).toHaveClass('bg-primary');
+    });
+});
+
+describe('InfiniteCanvas MoveMode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+    it('toggles move mode when move button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const buttons = screen.getAllByRole('button');
+        const moveUpLeftButton = buttons[1]; // Second button is move
+
+        // Click move button
+        fireEvent.click(moveUpLeftButton);
+        expect(moveUpLeftButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(moveUpLeftButton);
+        expect(moveUpLeftButton).toHaveClass('bg-primary');
+    });
+
+    it('changes cursor style when move mode is enabled', () => {
+        render(<InfiniteCanvas />);
+        const buttons = screen.getAllByRole('button');
+        const moveUpLeftButton = buttons[1];
+        const canvasContainer = screen.getByTestId('canvas-container');
+
+        // Initial state
+        expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
+
+        // Enable move mode
+        fireEvent.click(moveUpLeftButton);
+        expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
+    });
+
+    it('handles tool state transitions correctly', () => {
+        render(<InfiniteCanvas />);
+        const buttons = screen.getAllByRole('button');
+        const moveUpLeftButton = buttons[1];
+        const eraserButton = buttons[2];
+
+        // Enable move mode
+        fireEvent.click(moveUpLeftButton);
+        expect(moveUpLeftButton).toHaveClass('bg-secondary');
+
+        // Switch to eraser
+        fireEvent.click(eraserButton);
+        expect(eraserButton).toHaveClass('bg-secondary');
+        // Move mode remains active
+        expect(moveUpLeftButton).toHaveClass('bg-secondary');
+
+        // Disable eraser
+        fireEvent.click(eraserButton);
+        expect(eraserButton).toHaveClass('bg-primary');
+        // Move mode still remains active
+        expect(moveUpLeftButton).toHaveClass('bg-secondary');
     });
 });
