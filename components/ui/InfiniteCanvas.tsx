@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
+import { StrokeWidth } from '@/components/ui/StrokeWidth';
 
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
@@ -36,6 +37,7 @@ export default function InfiniteCanvas() {
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [moveMode, setMoveMode] = useState(false);
+    const [strokeWidth, setStrokeWidth] = useState(5);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -174,6 +176,7 @@ export default function InfiniteCanvas() {
                 {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
+                    strokeWidth: strokeWidth,
                 },
             ]);
         }
@@ -382,6 +385,7 @@ export default function InfiniteCanvas() {
                 {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
+                    strokeWidth: strokeWidth,
                 },
             ]);
         }
@@ -492,14 +496,22 @@ export default function InfiniteCanvas() {
                     <Eraser className="h-4 w-4" />{' '}
                 </Button>
                 {!eraserMode && (
-                    <Button className="p-2 backdrop-blur">
-                        <input
-                            type="color"
-                            onChange={(e) => setCurrentColor(e.target.value)}
-                            className="h-8 w-10 cursor-pointer rounded-md bg-transparent"
-                            value={currentColor}
+                    <>
+                        <Button className="p-2 backdrop-blur">
+                            <input
+                                type="color"
+                                onChange={(e) =>
+                                    setCurrentColor(e.target.value)
+                                }
+                                className="h-8 w-10 cursor-pointer rounded-md bg-transparent"
+                                value={currentColor}
+                            />
+                        </Button>
+                        <StrokeWidth
+                            strokeWidth={strokeWidth}
+                            onStrokeWidthChange={setStrokeWidth}
                         />
-                    </Button>
+                    </>
                 )}
             </div>
             <div className="fixed bottom-4 left-4 z-10 flex gap-2">
@@ -577,7 +589,7 @@ export default function InfiniteCanvas() {
                                 key={i}
                                 points={line.points}
                                 stroke={line.color}
-                                strokeWidth={5}
+                                strokeWidth={line.strokeWidth || strokeWidth}
                                 tension={0.5}
                                 lineCap="round"
                                 lineJoin="round"

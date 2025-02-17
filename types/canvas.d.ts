@@ -6,4 +6,5 @@ interface Point {
 interface DrawLine {
     points: number[];
     color: string;
+    strokeWidth?: number;
 }
