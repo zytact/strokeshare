@@ -271,6 +271,7 @@ export default function InfiniteCanvas() {
                 )}
             </div>
             <Stage
+                data-testid="stage"
                 width={dimensions.width}
                 height={dimensions.height}
                 onMouseDown={handleMouseDown}
@@ -287,9 +288,11 @@ export default function InfiniteCanvas() {
                 style={{ cursor: dragModeEnabled ? 'grab' : 'crosshair' }}
                 scale={{ x: stageScale, y: stageScale }}
             >
-                <Layer>
+                <Layer data-testid="layer">
                     {lines.map((line, i) => (
                         <Line
+                            data-testid="line"
+                            draggable
                             key={i}
                             points={line.points}
                             stroke={line.erase ? eraserColor : line.color}
