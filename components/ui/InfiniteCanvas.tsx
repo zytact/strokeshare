@@ -40,6 +40,7 @@ export default function InfiniteCanvas() {
             const shape = stage.findOne('#line-' + selectedId);
             if (shape) {
                 transformer.nodes([shape]);
+                transformer.getLayer()?.batchDraw();
             } else {
                 transformer.nodes([]);
             }
@@ -272,6 +273,17 @@ export default function InfiniteCanvas() {
         node.x(0);
         node.y(0);
         node.rotation(0);
+
+        // Force update the transformer
+        const transformer = transformerRef.current;
+        if (transformer) {
+            // Detach and reattach the node to the transformer
+            transformer.nodes([]);
+            setTimeout(() => {
+                transformer.nodes([node]);
+                transformer.getLayer()?.batchDraw();
+            }, 0);
+        }
     };
 
     const handleContextMenu = (e: KonvaEventObject<MouseEvent>) => {
