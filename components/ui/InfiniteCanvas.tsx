@@ -6,6 +6,7 @@ import Konva from 'konva';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
 import { Hand, Eraser, MoveUpLeft } from 'lucide-react';
+import { getDistanceToLineSegment } from '@/lib/utils';
 
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
@@ -15,11 +16,9 @@ export default function InfiniteCanvas() {
     const [isDragging, setIsDragging] = useState(false);
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
     const [eraserMode, setEraserMode] = useState(false);
+    const [isErasing, setIsErasing] = useState(false);
 
     const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
-    const [eraserColor, setEraserColor] = useState(() =>
-        resolvedTheme === 'dark' ? '#000000' : '#ffffff',
-    );
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
@@ -41,6 +40,7 @@ export default function InfiniteCanvas() {
             const shape = stage.findOne('#line-' + selectedId);
             if (shape) {
                 transformer.nodes([shape]);
+                transformer.getLayer()?.batchDraw();
             } else {
                 transformer.nodes([]);
             }
@@ -50,7 +50,6 @@ export default function InfiniteCanvas() {
     useEffect(() => {
         if (resolvedTheme) {
             setCurrentColor(resolvedTheme === 'dark' ? '#ffffff' : '#000000');
-            setEraserColor(resolvedTheme === 'dark' ? '#000000' : '#ffffff');
         }
     }, [resolvedTheme]);
 
@@ -82,18 +81,22 @@ export default function InfiniteCanvas() {
         if (dragModeEnabled && evt.button === 0) {
             setIsDragging(true);
             lastPointerPosition.current = point;
+            return;
         }
 
-        // Right click (button 2)
         if (evt.button === 2) {
             setIsDragging(true);
-            // Set the initial position when starting to drag
             lastPointerPosition.current = point;
             return;
         }
 
-        // Left click (button 0) for drawing
-        if (evt.button === 0 && !dragModeEnabled && !moveMode) {
+        // Add this condition for eraser
+        if (evt.button === 0 && eraserMode) {
+            setIsErasing(true);
+            return;
+        }
+
+        if (evt.button === 0 && !dragModeEnabled && !moveMode && !eraserMode) {
             setIsDrawing(true);
             const stagePoint = {
                 x: (point.x - stagePos.x) / stageScale,
@@ -105,7 +108,6 @@ export default function InfiniteCanvas() {
                 {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
-                    erase: eraserMode,
                 },
             ]);
         }
@@ -119,7 +121,6 @@ export default function InfiniteCanvas() {
         if (!point) return;
 
         if (isDragging) {
-            // Handle panning
             const dx = point.x - lastPointerPosition.current.x;
             const dy = point.y - lastPointerPosition.current.y;
 
@@ -132,13 +133,37 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!isDrawing) return;
-
-        // Convert point from screen coordinates to stage coordinates
         const stagePoint = {
             x: (point.x - stagePos.x) / stageScale,
             y: (point.y - stagePos.y) / stageScale,
         };
+
+        // Only erase when actively erasing
+        if (eraserMode && isErasing) {
+            const eraserRadius = 40;
+            const updatedLines = lines.filter((line) => {
+                let shouldKeepLine = true;
+                for (let i = 0; i < line.points.length - 2; i += 2) {
+                    const distance = getDistanceToLineSegment(
+                        stagePoint.x,
+                        stagePoint.y,
+                        line.points[i],
+                        line.points[i + 1],
+                        line.points[i + 2],
+                        line.points[i + 3],
+                    );
+                    if (distance < eraserRadius) {
+                        shouldKeepLine = false;
+                        break;
+                    }
+                }
+                return shouldKeepLine;
+            });
+            setLines(updatedLines);
+            return;
+        }
+
+        if (!isDrawing) return;
 
         const lastLine = [...lines];
         const currentLine = lastLine[lastLine.length - 1];
@@ -156,6 +181,9 @@ export default function InfiniteCanvas() {
         }
         if (isDrawing) {
             setIsDrawing(false);
+        }
+        if (isErasing) {
+            setIsErasing(false);
         }
     };
 
@@ -181,6 +209,81 @@ export default function InfiniteCanvas() {
             x: pointer.x - mousePointTo.x * newScale,
             y: pointer.y - mousePointTo.y * newScale,
         });
+    };
+
+    const handleTransformEnd = (
+        e: KonvaEventObject<Event>,
+        lineIndex: number,
+    ) => {
+        const node = e.target;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        const rotation = node.rotation();
+        const x = node.x();
+        const y = node.y();
+
+        // Reset scale and apply the transformation to the points
+        node.scaleX(1);
+        node.scaleY(1);
+
+        // Create a new array to avoid mutating state directly
+        const newLines = [...lines];
+        const line = newLines[lineIndex];
+
+        // Transform all points
+        const newPoints: number[] = [];
+        for (let i = 0; i < line.points.length; i += 2) {
+            const point = {
+                x: line.points[i],
+                y: line.points[i + 1],
+            };
+
+            // Apply transformations in the correct order
+            // 1. Scale
+            point.x *= scaleX;
+            point.y *= scaleY;
+
+            // 2. Rotate
+            if (rotation !== 0) {
+                const rad = (rotation * Math.PI) / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+                const newX = point.x * cos - point.y * sin;
+                const newY = point.x * sin + point.y * cos;
+                point.x = newX;
+                point.y = newY;
+            }
+
+            // 3. Translate
+            point.x += x;
+            point.y += y;
+
+            newPoints.push(point.x, point.y);
+        }
+
+        // Update the line with new points
+        newLines[lineIndex] = {
+            ...line,
+            points: newPoints,
+        };
+
+        setLines(newLines);
+
+        // Reset the position as the points now include the transformation
+        node.x(0);
+        node.y(0);
+        node.rotation(0);
+
+        // Force update the transformer
+        const transformer = transformerRef.current;
+        if (transformer) {
+            // Detach and reattach the node to the transformer
+            transformer.nodes([]);
+            setTimeout(() => {
+                transformer.nodes([node]);
+                transformer.getLayer()?.batchDraw();
+            }, 0);
+        }
     };
 
     const handleContextMenu = (e: KonvaEventObject<MouseEvent>) => {
@@ -214,7 +317,6 @@ export default function InfiniteCanvas() {
                 {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
-                    erase: eraserMode,
                 },
             ]);
         }
@@ -241,12 +343,36 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!isDrawing) return;
-
         const stagePoint = {
             x: (point.x - stagePos.x) / stageScale,
             y: (point.y - stagePos.y) / stageScale,
         };
+
+        if (eraserMode) {
+            const eraserRadius = 40;
+            const updatedLines = lines.filter((line) => {
+                let shouldKeepLine = true;
+                for (let i = 0; i < line.points.length - 2; i += 2) {
+                    const distance = getDistanceToLineSegment(
+                        stagePoint.x,
+                        stagePoint.y,
+                        line.points[i],
+                        line.points[i + 1],
+                        line.points[i + 2],
+                        line.points[i + 3],
+                    );
+                    if (distance < eraserRadius) {
+                        shouldKeepLine = false;
+                        break;
+                    }
+                }
+                return shouldKeepLine;
+            });
+            setLines(updatedLines);
+            return;
+        }
+
+        if (!isDrawing) return;
 
         const lastLine = [...lines];
         const currentLine = lastLine[lastLine.length - 1];
@@ -323,19 +449,6 @@ export default function InfiniteCanvas() {
                                 e.target === e.target.getStage();
                             if (clickedOnEmpty) {
                                 setSelectedId(null);
-                            } else {
-                                const clickedOnLine =
-                                    e.target.getClassName() === 'Line';
-                                if (clickedOnLine) {
-                                    const lineIndex = parseInt(
-                                        e.target.id().split('-')[1],
-                                    );
-                                    if (!lines[lineIndex].erase) {
-                                        setSelectedId(lineIndex);
-                                    } else {
-                                        setSelectedId(null);
-                                    }
-                                }
                             }
                         }
                     }}
@@ -350,31 +463,28 @@ export default function InfiniteCanvas() {
                             <Line
                                 data-testid="line"
                                 id={`line-${i}`}
-                                draggable={moveMode && !line.erase}
+                                draggable={moveMode}
                                 key={i}
                                 points={line.points}
-                                stroke={line.erase ? eraserColor : line.color}
-                                strokeWidth={line.erase ? 50 : 5}
+                                stroke={line.color}
+                                strokeWidth={5}
                                 tension={0.5}
                                 lineCap="round"
                                 lineJoin="round"
-                                globalCompositeOperation={
-                                    line.erase
-                                        ? 'destination-out'
-                                        : 'source-over'
-                                }
+                                globalCompositeOperation="source-over"
                                 onClick={(e) => {
-                                    if (moveMode && !line.erase) {
+                                    if (moveMode) {
                                         e.cancelBubble = true;
                                         setSelectedId(i);
                                     }
                                 }}
                                 onTap={(e) => {
-                                    if (moveMode && !line.erase) {
+                                    if (moveMode) {
                                         e.cancelBubble = true;
                                         setSelectedId(i);
                                     }
                                 }}
+                                onTransformEnd={(e) => handleTransformEnd(e, i)}
                             />
                         ))}
                         {moveMode && (

@@ -6,5 +6,5 @@ interface Point {
 interface Line {
     points: number[];
     color: string;
-    erase: boolean;
+    opacity?: number;
 }
