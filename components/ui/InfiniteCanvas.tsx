@@ -510,7 +510,7 @@ export default function InfiniteCanvas() {
                 >
                     <Redo2 className="h-4 w-4" />
                 </Button>
-                <div className="b-4 m-4 h-8 w-2" />
+                <div className="mx-2 h-8 w-px bg-border" />
                 <Button
                     aria-label="zoom-in"
                     variant="default"
