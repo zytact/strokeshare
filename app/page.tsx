@@ -1,5 +1,14 @@
-import InfiniteCanvas from '@/components/ui/InfiniteCanvas';
+'use client';
+
 import { ModeToggle } from '@/components/ui/mode-toggle';
+import dynamic from 'next/dynamic';
+
+const DynamicInfiniteCanvas = dynamic(
+    () => import('@/components/ui/InfiniteCanvas'),
+    {
+        ssr: false,
+    },
+);
 
 export default function HomePage() {
     return (
@@ -7,7 +16,7 @@ export default function HomePage() {
             <div className="absolute right-4 top-4 z-10">
                 <ModeToggle />
             </div>
-            <InfiniteCanvas />
+            <DynamicInfiniteCanvas />
         </main>
     );
 }
