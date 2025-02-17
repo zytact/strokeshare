@@ -451,8 +451,17 @@ export default function InfiniteCanvas() {
 
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
-        setIsDragging(false);
-        setIsDrawing(false);
+        if (isDragging) {
+            setIsDragging(false);
+        }
+        if (isDrawing) {
+            setIsDrawing(false);
+            addToHistory(lines); // Add this line to update history
+        }
+        if (isErasing) {
+            setIsErasing(false);
+            addToHistory(lines); // Add this line to update history
+        }
     };
 
     return (
