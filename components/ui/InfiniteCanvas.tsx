@@ -586,16 +586,15 @@ export default function InfiniteCanvas() {
                 >
                     <ZoomOut className="h-4 w-4" />
                 </Button>
-                <div className="hidden sm:block">
-                    <div className="mx-2 h-8 w-px bg-border" />
-                    <Button
-                        aria-label="export"
-                        variant="default"
-                        onClick={handleExport}
-                    >
-                        <Download className="h-4 w-4" />
-                    </Button>
-                </div>
+                <div className="mx-2 hidden h-8 w-px bg-border sm:block" />
+                <Button
+                    aria-label="export"
+                    variant="default"
+                    onClick={handleExport}
+                    className="hidden sm:block"
+                >
+                    <Download className="h-4 w-4" />
+                </Button>
             </div>
             <div
                 data-testid="canvas-container"
