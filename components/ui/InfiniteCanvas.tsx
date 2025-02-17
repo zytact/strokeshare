@@ -330,7 +330,9 @@ export default function InfiniteCanvas() {
                                     const lineIndex = parseInt(
                                         e.target.id().split('-')[1],
                                     );
-                                    if (lines[lineIndex]?.erase) {
+                                    if (!lines[lineIndex].erase) {
+                                        setSelectedId(lineIndex);
+                                    } else {
                                         setSelectedId(null);
                                     }
                                 }
@@ -361,13 +363,15 @@ export default function InfiniteCanvas() {
                                         ? 'destination-out'
                                         : 'source-over'
                                 }
-                                onClick={() => {
+                                onClick={(e) => {
                                     if (moveMode && !line.erase) {
+                                        e.cancelBubble = true;
                                         setSelectedId(i);
                                     }
                                 }}
-                                onTap={() => {
+                                onTap={(e) => {
                                     if (moveMode && !line.erase) {
+                                        e.cancelBubble = true;
                                         setSelectedId(i);
                                     }
                                 }}
