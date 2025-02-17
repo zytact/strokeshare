@@ -28,6 +28,22 @@ export default function InfiniteCanvas() {
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
+    const resetTransformer = () => {
+        const transformer = transformerRef.current;
+        if (transformer) {
+            transformer.nodes([]);
+            transformer.getLayer()?.batchDraw();
+        }
+        setSelectedId(null);
+    };
+
+    // Update the moveMode effect
+    useEffect(() => {
+        if (!moveMode) {
+            resetTransformer();
+        }
+    }, [moveMode]);
+
     useEffect(() => {
         if (moveMode) {
             if (selectedId === null) {
@@ -273,16 +289,13 @@ export default function InfiniteCanvas() {
         node.x(0);
         node.y(0);
         node.rotation(0);
+        node.scaleX(1);
+        node.scaleY(1);
 
-        // Force update the transformer
-        const transformer = transformerRef.current;
-        if (transformer) {
-            // Detach and reattach the node to the transformer
-            transformer.nodes([]);
-            setTimeout(() => {
-                transformer.nodes([node]);
-                transformer.getLayer()?.batchDraw();
-            }, 0);
+        // Force update the layer
+        const layer = node.getLayer();
+        if (layer) {
+            layer.batchDraw();
         }
     };
 
@@ -475,12 +488,24 @@ export default function InfiniteCanvas() {
                                 onClick={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
                                         setSelectedId(i);
                                     }
                                 }}
-                                onTap={(e) => {
+                                onTouchStart={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
                                         setSelectedId(i);
                                     }
                                 }}
