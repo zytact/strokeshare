@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(6);
+        expect(buttons).toHaveLength(8);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -298,5 +298,79 @@ describe('InfiniteCanvas Undo/Redo', () => {
         // After redo, undo should be enabled and redo disabled
         expect(undoButton).not.toBeDisabled();
         expect(redoButton).toBeDisabled();
+    });
+});
+
+describe('InfiniteCanvas Zoom Controls', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('renders zoom controls with initial 100% scale', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomInButton = screen.getByRole('button', { name: /zoom-in/i });
+        const zoomOutButton = screen.getByRole('button', { name: /zoom-out/i });
+        const scaleDisplay = screen.getByText('100%');
+
+        expect(zoomInButton).toBeInTheDocument();
+        expect(zoomOutButton).toBeInTheDocument();
+        expect(scaleDisplay).toBeInTheDocument();
+    });
+
+    it('increases scale when zoom in button is clicked', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomInButton = screen.getByRole('button', { name: /zoom-in/i });
+        fireEvent.click(zoomInButton);
+
+        // Scale should increase by 5%
+        const scaleDisplay = screen.getByText('105%');
+        expect(scaleDisplay).toBeInTheDocument();
+    });
+
+    it('decreases scale when zoom out button is clicked', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomOutButton = screen.getByRole('button', { name: /zoom-out/i });
+        fireEvent.click(zoomOutButton);
+
+        // Scale should decrease by 5%
+        const scaleDisplay = screen.getByText('95%');
+        expect(scaleDisplay).toBeInTheDocument();
+    });
+
+    it('shows correct scale after multiple zoom operations', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomInButton = screen.getByRole('button', { name: /zoom-in/i });
+        const zoomOutButton = screen.getByRole('button', { name: /zoom-out/i });
+
+        // Zoom in twice
+        fireEvent.click(zoomInButton);
+        fireEvent.click(zoomInButton);
+        expect(screen.getByText('110%')).toBeInTheDocument();
+
+        // Zoom out once
+        fireEvent.click(zoomOutButton);
+        expect(screen.getByText('105%')).toBeInTheDocument();
+    });
+
+    it('maintains zoom state when switching tools', () => {
+        render(<InfiniteCanvas />);
+
+        const zoomInButton = screen.getByRole('button', { name: /zoom-in/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Zoom in first
+        fireEvent.click(zoomInButton);
+        expect(screen.getByText('105%')).toBeInTheDocument();
+
+        // Switch to eraser mode
+        fireEvent.click(eraserButton);
+
+        // Scale should remain the same
+        expect(screen.getByText('105%')).toBeInTheDocument();
     });
 });
