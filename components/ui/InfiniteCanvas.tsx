@@ -13,6 +13,7 @@ import {
     Undo2,
     ZoomIn,
     ZoomOut,
+    Download,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -358,6 +359,23 @@ export default function InfiniteCanvas() {
         e.evt.preventDefault();
     };
 
+    const handleExport = () => {
+        if (!stageRef.current) return;
+
+        // Get the stage content as a data URL
+        const dataURL = stageRef.current.toDataURL();
+
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.download = 'strokeshare-export.png';
+        link.href = dataURL;
+
+        // Trigger the download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleTouchStart = (e: KonvaEventObject<TouchEvent>) => {
         const evt = e.evt;
         evt.preventDefault();
@@ -471,48 +489,67 @@ export default function InfiniteCanvas() {
     return (
         <>
             <div className="fixed z-10 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
-                <Button
-                    aria-label="hand"
-                    variant={dragModeEnabled ? 'secondary' : 'default'}
-                    onClick={() => setDragModeEnabled(!dragModeEnabled)}
-                >
-                    <Hand className="h-4 w-4" />
-                </Button>
-                <Button
-                    aria-label="move"
-                    variant={moveMode ? 'secondary' : 'default'}
-                    onClick={() => setMoveMode(!moveMode)}
-                >
-                    <MoveUpLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                    aria-label="eraser"
-                    variant={eraserMode ? 'secondary' : 'default'}
-                    onClick={() => {
-                        setEraserMode(!eraserMode);
-                        setDragModeEnabled(false);
-                    }}
-                >
-                    <Eraser className="h-4 w-4" />{' '}
-                </Button>
+                <div>
+                    <Button
+                        aria-label="hand"
+                        variant={dragModeEnabled ? 'secondary' : 'default'}
+                        onClick={() => setDragModeEnabled(!dragModeEnabled)}
+                    >
+                        <Hand className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="move"
+                        variant={moveMode ? 'secondary' : 'default'}
+                        onClick={() => setMoveMode(!moveMode)}
+                    >
+                        <MoveUpLeft className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="eraser"
+                        variant={eraserMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            setEraserMode(!eraserMode);
+                            setDragModeEnabled(false);
+                        }}
+                    >
+                        <Eraser className="h-4 w-4" />{' '}
+                    </Button>
+                </div>
                 {!eraserMode && (
                     <>
-                        <Button className="p-2 backdrop-blur">
-                            <input
-                                type="color"
-                                onChange={(e) =>
-                                    setCurrentColor(e.target.value)
-                                }
-                                className="h-8 w-10 cursor-pointer rounded-md bg-transparent"
-                                value={currentColor}
+                        <div>
+                            <Button className="p-2 backdrop-blur">
+                                <input
+                                    type="color"
+                                    onChange={(e) =>
+                                        setCurrentColor(e.target.value)
+                                    }
+                                    className="h-8 w-8 cursor-pointer rounded-md bg-transparent"
+                                    value={currentColor}
+                                />
+                            </Button>
+                        </div>
+                        <div>
+                            <StrokeWidth
+                                strokeWidth={strokeWidth}
+                                onStrokeWidthChange={setStrokeWidth}
                             />
-                        </Button>
-                        <StrokeWidth
-                            strokeWidth={strokeWidth}
-                            onStrokeWidthChange={setStrokeWidth}
-                        />
+                        </div>
                     </>
                 )}
+                <div className="block sm:hidden">
+                    <Button
+                        aria-label="export"
+                        variant="default"
+                        onClick={handleExport}
+                    >
+                        <Download className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
             <div className="fixed bottom-4 left-4 z-10 flex gap-2">
                 <Button
@@ -548,6 +585,15 @@ export default function InfiniteCanvas() {
                     onClick={() => handleZoom(false)}
                 >
                     <ZoomOut className="h-4 w-4" />
+                </Button>
+                <div className="mx-2 hidden h-8 w-px bg-border sm:block" />
+                <Button
+                    aria-label="export"
+                    variant="default"
+                    onClick={handleExport}
+                    className="hidden sm:block"
+                >
+                    <Download className="h-4 w-4" />
                 </Button>
             </div>
             <div

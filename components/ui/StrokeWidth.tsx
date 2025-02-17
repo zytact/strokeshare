@@ -22,7 +22,9 @@ export function StrokeWidth({
             <PopoverTrigger asChild>
                 <Button variant="default" className="flex items-center gap-2">
                     <Minus className="h-4 w-4" />
-                    <span className="text-sm">{strokeWidth}px</span>
+                    <span className="hidden text-sm sm:block">
+                        {strokeWidth}px
+                    </span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">

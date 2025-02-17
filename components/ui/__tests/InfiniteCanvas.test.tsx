@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(9);
+        expect(buttons).toHaveLength(11);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -372,5 +372,63 @@ describe('InfiniteCanvas Zoom Controls', () => {
 
         // Scale should remain the same
         expect(screen.getByText('105%')).toBeInTheDocument();
+    });
+});
+
+describe('StrokeWidth Component Responsiveness', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('hides stroke width text on mobile screens', () => {
+        // Mock window.innerWidth to simulate mobile screen
+        Object.defineProperty(window, 'innerWidth', {
+            writable: true,
+            configurable: true,
+            value: 500, // Mobile width
+        });
+
+        // Trigger window resize event
+        window.dispatchEvent(new Event('resize'));
+
+        render(<InfiniteCanvas />);
+
+        // Find the stroke width span
+        const strokeWidthSpan = screen.queryByText(/px$/);
+
+        // Check if the span has the hidden class
+        expect(strokeWidthSpan).toHaveClass('hidden');
+    });
+
+    it('shows stroke width text on desktop screens', () => {
+        // Mock window.innerWidth to simulate desktop screen
+        Object.defineProperty(window, 'innerWidth', {
+            writable: true,
+            configurable: true,
+            value: 1024, // Desktop width
+        });
+
+        // Trigger window resize event
+        window.dispatchEvent(new Event('resize'));
+
+        render(<InfiniteCanvas />);
+
+        // Find the stroke width span
+        const strokeWidthSpan = screen.queryByText(/px$/);
+
+        // Check if the span has the sm:block class
+        expect(strokeWidthSpan).toHaveClass('sm:block');
+    });
+
+    it('stroke width button remains visible on all screen sizes', () => {
+        render(<InfiniteCanvas />);
+
+        // Find the stroke width button by the Minus icon
+        const strokeWidthButton = screen.getByRole('button', {
+            name: /5px/i, // Assuming default stroke width is 5
+        });
+
+        expect(strokeWidthButton).toBeVisible();
     });
 });
