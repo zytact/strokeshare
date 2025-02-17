@@ -5,7 +5,15 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { Hand, Eraser, MoveUpLeft, Redo2, Undo2 } from 'lucide-react';
+import {
+    Hand,
+    Eraser,
+    MoveUpLeft,
+    Redo2,
+    Undo2,
+    ZoomIn,
+    ZoomOut,
+} from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
 
@@ -103,6 +111,30 @@ export default function InfiniteCanvas() {
     const [stagePos, setStagePos] = useState<Point>({ x: 0, y: 0 });
     const [stageScale, setStageScale] = useState(1);
     const lastPointerPosition = useRef<Point>({ x: 0, y: 0 });
+
+    const handleZoom = (zoomIn: boolean) => {
+        const oldScale = stageScale;
+        const newScale = zoomIn ? oldScale + 0.05 : oldScale - 0.05;
+
+        // Get stage center point
+        const stage = stageRef.current;
+        if (!stage) return;
+
+        const centerX = stage.width() / 2;
+        const centerY = stage.height() / 2;
+
+        const mousePointTo = {
+            x: (centerX - stagePos.x) / oldScale,
+            y: (centerY - stagePos.y) / oldScale,
+        };
+
+        setStageScale(newScale);
+
+        setStagePos({
+            x: centerX - mousePointTo.x * newScale,
+            y: centerY - mousePointTo.y * newScale,
+        });
+    };
 
     const handleMouseDown = (e: KonvaEventObject<MouseEvent>) => {
         const evt = e.evt;
@@ -461,7 +493,7 @@ export default function InfiniteCanvas() {
                     </Button>
                 )}
             </div>
-            <div className="fixed bottom-4 left-4 flex gap-2">
+            <div className="fixed bottom-4 left-4 z-10 flex gap-2">
                 <Button
                     aria-label="undo"
                     variant="default"
@@ -477,6 +509,24 @@ export default function InfiniteCanvas() {
                     disabled={!canRedo()}
                 >
                     <Redo2 className="h-4 w-4" />
+                </Button>
+                <div className="mx-2 h-8 w-px bg-border" />
+                <Button
+                    aria-label="zoom-in"
+                    variant="default"
+                    onClick={() => handleZoom(true)}
+                >
+                    <ZoomIn className="h-4 w-4" />
+                </Button>
+                <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-md bg-secondary px-2 text-sm">
+                    {Math.round(stageScale * 100)}%
+                </div>
+                <Button
+                    aria-label="zoom-out"
+                    variant="default"
+                    onClick={() => handleZoom(false)}
+                >
+                    <ZoomOut className="h-4 w-4" />
                 </Button>
             </div>
             <div
