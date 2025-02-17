@@ -5,12 +5,12 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
 import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import { Hand, Eraser, MoveUpLeft } from 'lucide-react';
+import { Hand, Eraser, MoveUpLeft, Redo2, Undo2 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
+import { useCanvasStore } from '@/store/useCanvasStore';
 
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
-    const [lines, setLines] = useState<Line[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
     const stageRef = useRef<Konva.Stage>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -22,6 +22,9 @@ export default function InfiniteCanvas() {
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
+
+    const { lines, setLines, addToHistory, undo, redo, canUndo, canRedo } =
+        useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [moveMode, setMoveMode] = useState(false);
@@ -81,6 +84,21 @@ export default function InfiniteCanvas() {
         window.addEventListener('resize', updateDimensions);
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.metaKey || e.ctrlKey) {
+                if (e.key === 'z') {
+                    undo();
+                } else if (e.key === 'y') {
+                    redo();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo]);
 
     const [stagePos, setStagePos] = useState<Point>({ x: 0, y: 0 });
     const [stageScale, setStageScale] = useState(1);
@@ -197,9 +215,11 @@ export default function InfiniteCanvas() {
         }
         if (isDrawing) {
             setIsDrawing(false);
+            addToHistory(lines);
         }
         if (isErasing) {
             setIsErasing(false);
+            addToHistory(lines);
         }
     };
 
@@ -440,6 +460,24 @@ export default function InfiniteCanvas() {
                         />
                     </Button>
                 )}
+            </div>
+            <div className="fixed bottom-4 left-4 flex gap-2">
+                <Button
+                    aria-label="undo"
+                    variant="default"
+                    onClick={undo}
+                    disabled={!canUndo()}
+                >
+                    <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                    aria-label="redo"
+                    variant="default"
+                    onClick={redo}
+                    disabled={!canRedo()}
+                >
+                    <Redo2 className="h-4 w-4" />
+                </Button>
             </div>
             <div
                 data-testid="canvas-container"

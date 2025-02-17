@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(4);
+        expect(buttons).toHaveLength(6);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -188,5 +188,115 @@ describe('InfiniteCanvas MoveMode', () => {
         expect(eraserButton).toHaveClass('bg-primary');
         // Move mode still remains active
         expect(moveUpLeftButton).toHaveClass('bg-secondary');
+    });
+});
+
+describe('InfiniteCanvas Undo/Redo', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('renders undo and redo buttons', () => {
+        render(<InfiniteCanvas />);
+
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        const redoButton = screen.getByRole('button', { name: /redo/i });
+
+        expect(undoButton).toBeInTheDocument();
+        expect(redoButton).toBeInTheDocument();
+    });
+
+    it('initially disables undo and redo buttons when no actions are performed', () => {
+        render(<InfiniteCanvas />);
+
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        const redoButton = screen.getByRole('button', { name: /redo/i });
+
+        expect(undoButton).toBeDisabled();
+        expect(redoButton).toBeDisabled();
+    });
+
+    it('enables undo button after drawing action', () => {
+        render(<InfiniteCanvas />);
+
+        const canvas = screen.getByRole('presentation');
+
+        // Simulate drawing action
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 120, clientY: 120 });
+        fireEvent.mouseUp(canvas);
+
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        expect(undoButton).not.toBeDisabled();
+    });
+
+    it('enables redo button after undo action', () => {
+        render(<InfiniteCanvas />);
+
+        const canvas = screen.getByRole('presentation');
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        const redoButton = screen.getByRole('button', { name: /redo/i });
+
+        // Simulate drawing action
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 120, clientY: 120 });
+        fireEvent.mouseUp(canvas);
+
+        // Perform undo
+        fireEvent.click(undoButton);
+
+        expect(redoButton).not.toBeDisabled();
+    });
+
+    it('disables redo button after new drawing action following undo', () => {
+        render(<InfiniteCanvas />);
+
+        const canvas = screen.getByRole('presentation');
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        const redoButton = screen.getByRole('button', { name: /redo/i });
+
+        // First drawing action
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 120, clientY: 120 });
+        fireEvent.mouseUp(canvas);
+
+        // Undo
+        fireEvent.click(undoButton);
+        expect(redoButton).not.toBeDisabled();
+
+        // New drawing action
+        fireEvent.mouseDown(canvas, { clientX: 200, clientY: 200 });
+        fireEvent.mouseMove(canvas, { clientX: 220, clientY: 220 });
+        fireEvent.mouseUp(canvas);
+
+        expect(redoButton).toBeDisabled();
+    });
+
+    it('responds to keyboard shortcuts for undo/redo', () => {
+        render(<InfiniteCanvas />);
+
+        const canvas = screen.getByRole('presentation');
+
+        // Simulate drawing action
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 120, clientY: 120 });
+        fireEvent.mouseUp(canvas);
+
+        // Test Ctrl/Cmd + Z for undo
+        fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+
+        // Test Ctrl/Cmd + Shift + Z for redo
+        fireEvent.keyDown(document, {
+            key: 'y',
+            ctrlKey: true,
+        });
+
+        const undoButton = screen.getByRole('button', { name: /undo/i });
+        const redoButton = screen.getByRole('button', { name: /redo/i });
+
+        // After redo, undo should be enabled and redo disabled
+        expect(undoButton).not.toBeDisabled();
+        expect(redoButton).toBeDisabled();
     });
 });

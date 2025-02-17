@@ -1,74 +1,64 @@
 import { create } from 'zustand';
 
-type LineStore = {
-    lines: Line[];
-    history: Line[][]; // Store states history
-    historyIndex: number; // Track current position in history
-    addLine: (line: Line) => void;
-    updateLines: (lines: Line[]) => void;
+interface CanvasState {
+    lines: DrawLine[];
+    history: DrawLine[][];
+    currentStep: number;
+    setLines: (lines: DrawLine[]) => void;
+    addToHistory: (lines: DrawLine[]) => void;
     undo: () => void;
     redo: () => void;
-    clearLines: () => void;
-};
+    canUndo: () => boolean;
+    canRedo: () => boolean;
+}
 
-export const useLineStore = create<LineStore>((set) => ({
+export const useCanvasStore = create<CanvasState>((set, get) => ({
     lines: [],
-    history: [[]], // Initialize with an empty state
-    historyIndex: 0, // Start at the initial empty state
-    addLine: (line) =>
-        set((state) => {
-            const newLines = [...state.lines, line];
-            const newHistory = state.history.slice(0, state.historyIndex + 1);
-            return {
-                lines: newLines,
-                history: [...newHistory, newLines],
-                historyIndex: state.historyIndex + 1,
-            };
-        }),
-    updateLines: (lines) =>
-        set((state) => {
-            const newHistory = state.history.slice(0, state.historyIndex + 1);
-            return {
-                lines,
-                history: [...newHistory, lines],
-                historyIndex: state.historyIndex + 1,
-            };
-        }),
-    undo: () =>
-        set((state) => {
-            if (state.historyIndex < 0) return state;
-            const newIndex = state.historyIndex - 1;
-            return {
-                lines: state.history[newIndex] || [],
-                history: state.history,
-                historyIndex: newIndex,
-            };
-        }),
-    redo: () =>
-        set((state) => {
-            if (state.historyIndex >= state.history.length - 1) return state;
-            const newIndex = state.historyIndex + 1;
-            return {
-                lines: state.history[newIndex],
-                history: state.history,
-                historyIndex: newIndex,
-            };
-        }),
-    clearLines: () =>
-        set((state) => ({
-            lines: [],
-            history: [...state.history, []],
-            historyIndex: state.historyIndex + 1,
-        })),
-}));
+    history: [[]],
+    currentStep: 0,
 
-type EraserStore = {
-    isEraserMode: boolean;
-    toggleEraseMode: () => void;
-};
+    setLines: (lines) => {
+        set({ lines });
+    },
 
-export const useEraserStore = create<EraserStore>((set) => ({
-    isEraserMode: false,
-    toggleEraseMode: () =>
-        set((state) => ({ isEraserMode: !state.isEraserMode })),
+    addToHistory: (lines) => {
+        const { currentStep, history } = get();
+        const newHistory = history.slice(0, currentStep + 1);
+        newHistory.push([...lines]);
+        set({
+            history: newHistory,
+            currentStep: currentStep + 1,
+            lines: lines,
+        });
+    },
+
+    undo: () => {
+        const { currentStep, history } = get();
+        if (currentStep > 0) {
+            const newStep = currentStep - 1;
+            set({
+                currentStep: newStep,
+                lines: [...history[newStep]],
+            });
+        }
+    },
+
+    redo: () => {
+        const { currentStep, history } = get();
+        if (currentStep < history.length - 1) {
+            const newStep = currentStep + 1;
+            set({
+                currentStep: newStep,
+                lines: [...history[newStep]],
+            });
+        }
+    },
+
+    canUndo: () => {
+        return get().currentStep > 0;
+    },
+
+    canRedo: () => {
+        return get().currentStep < get().history.length - 1;
+    },
 }));

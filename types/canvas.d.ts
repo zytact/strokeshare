@@ -3,8 +3,7 @@ interface Point {
     y: number;
 }
 
-interface Line {
+interface DrawLine {
     points: number[];
     color: string;
-    opacity?: number;
 }
