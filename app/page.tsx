@@ -1,5 +1,3 @@
-'use client';
-
 import { ModeToggle } from '@/components/ui/mode-toggle';
 import InfiniteCanvas from '@/components/ui/InfiniteCanvas';
 
