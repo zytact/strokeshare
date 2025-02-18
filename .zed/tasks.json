@@ -8,19 +8,19 @@
     },
     {
         "label": "Test",
-        "command": "pnpm run vitest -t='$ZED_SYMBOL'",
+        "command": "pnpm run test -t='$ZED_SYMBOL'",
         "use_new_terminal": false,
         "hide": "on_success"
     },
     {
         "label": "Test File",
-        "command": "pnpm run vitest '$ZED_FILENAME'",
+        "command": "pnpm run test '$ZED_FILENAME'",
         "use_new_terminal": false,
         "hide": "on_success"
     },
     {
         "label": "Test Project",
-        "command": "pnpm run vitest run",
+        "command": "pnpm run test run",
         "use_new_terminal": false,
         "hide": "never"
     }
