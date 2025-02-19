@@ -579,7 +579,13 @@ export default function InfiniteCanvas() {
             </div>
             <div
                 data-testid="canvas-container"
-                style={{ cursor: dragModeEnabled ? 'grab' : 'crosshair' }}
+                style={{
+                    cursor: isDragging
+                        ? 'grabbing'
+                        : dragModeEnabled
+                          ? 'grab'
+                          : 'crosshair',
+                }}
             >
                 <Stage
                     width={dimensions.width}
@@ -604,7 +610,13 @@ export default function InfiniteCanvas() {
                     ref={stageRef}
                     x={stagePos.x}
                     y={stagePos.y}
-                    style={{ cursor: dragModeEnabled ? 'grab' : 'crosshair' }}
+                    style={{
+                        cursor: isDragging
+                            ? 'grabbing'
+                            : dragModeEnabled
+                              ? 'grab'
+                              : 'crosshair',
+                    }}
                     scale={{ x: stageScale, y: stageScale }}
                 >
                     <Layer data-testid="layer">
