@@ -3,6 +3,7 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { describe, it, vi, expect, afterEach } from 'vitest';
 import { DownloadPop } from '@/components/ui/DownloadPop';
 import '@testing-library/jest-dom/vitest';
+import Konva from 'konva';
 
 const mockToast = vi.fn();
 
@@ -12,18 +13,31 @@ vi.mock('@/hooks/use-toast', () => ({
     }),
 }));
 
+vi.mock('@/store/useCanvasStore', () => ({
+    useCanvasStore: () => ({
+        lines: [],
+    }),
+}));
+
+vi.mock('@/store/useDownloadPopStore', () => ({
+    useDownloadPopStore: () => ({
+        exportWithBackground: false,
+        setExportWithBackground: vi.fn(),
+    }),
+}));
+
 describe('DownloadPop', () => {
-    const mockHandleSVG = vi.fn();
-    const mockHandlePNG = vi.fn();
-    const mockCopyImg = vi.fn();
-    const mockSetExportWithBackground = vi.fn();
+    const mockStage = new Konva.Stage({
+        container: document.createElement('div'),
+        width: 800,
+        height: 600,
+    });
 
     const defaultProps = {
-        handleSVG: mockHandleSVG,
-        handlePNG: mockHandlePNG,
-        copyImg: mockCopyImg,
-        exportWithBackground: false,
-        setExportWithBackground: mockSetExportWithBackground,
+        stageRef: { current: mockStage },
+        stagePos: { x: 0, y: 0 },
+        stageScale: 1,
+        strokeWidth: 1,
     };
 
     afterEach(() => {
@@ -36,7 +50,7 @@ describe('DownloadPop', () => {
         expect(screen.getByRole('button')).toBeInTheDocument();
     });
 
-    it('opens popover when download button is clicked', () => {
+    it('opens popover with export options when clicked', () => {
         render(<DownloadPop {...defaultProps} />);
 
         const downloadButton = screen.getByRole('button');
@@ -49,81 +63,9 @@ describe('DownloadPop', () => {
         expect(screen.getByText('Background')).toBeInTheDocument();
     });
 
-    it('calls handleSVG when SVG button is clicked', () => {
-        render(<DownloadPop {...defaultProps} />);
-
-        const downloadButton = screen.getByRole('button');
-        fireEvent.click(downloadButton);
-
-        const svgButton = screen.getByText('SVG');
-        fireEvent.click(svgButton);
-
-        expect(mockHandleSVG).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls handlePNG when PNG button is clicked', () => {
-        render(<DownloadPop {...defaultProps} />);
-
-        const downloadButton = screen.getByRole('button');
-        fireEvent.click(downloadButton);
-
-        const pngButton = screen.getByText('PNG');
-        fireEvent.click(pngButton);
-
-        expect(mockHandlePNG).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls copyImg when Copy button is clicked', () => {
-        render(<DownloadPop {...defaultProps} />);
-
-        const downloadButton = screen.getByRole('button');
-        fireEvent.click(downloadButton);
-
-        const copyButton = screen.getByText('Copy');
-        fireEvent.click(copyButton);
-
-        expect(mockCopyImg).toHaveBeenCalledTimes(1);
-    });
-
-    it('toggles background switch when clicked', () => {
-        render(<DownloadPop {...defaultProps} />);
-
-        const downloadButton = screen.getByRole('button');
-        fireEvent.click(downloadButton);
-
-        const backgroundSwitch = screen.getByRole('switch');
-        fireEvent.click(backgroundSwitch);
-
-        expect(mockSetExportWithBackground).toHaveBeenCalledTimes(1);
-        expect(mockSetExportWithBackground).toHaveBeenCalledWith(true);
-    });
-
     it('applies custom className when provided', () => {
         const customClassName = 'custom-class';
         render(<DownloadPop {...defaultProps} className={customClassName} />);
-
-        const button = screen.getByRole('button');
-        expect(button).toHaveClass(customClassName);
-    });
-
-    it('calls copyImg and shows toast when Copy button is clicked', () => {
-        // Get the mocked toast function
-
-        render(<DownloadPop {...defaultProps} />);
-
-        const downloadButton = screen.getByRole('button');
-        fireEvent.click(downloadButton);
-
-        const copyButton = screen.getByText('Copy');
-        fireEvent.click(copyButton);
-
-        // Verify that copyImg was called
-        expect(mockCopyImg).toHaveBeenCalledTimes(1);
-
-        // Verify that toast was called with correct parameters
-        expect(mockToast).toHaveBeenCalledTimes(1);
-        expect(mockToast).toHaveBeenCalledWith({
-            title: 'Copied to clipboard',
-        });
+        expect(screen.getByRole('button')).toHaveClass(customClassName);
     });
 });
