@@ -5,27 +5,6 @@ import { DownloadPop } from '@/components/ui/DownloadPop';
 import '@testing-library/jest-dom/vitest';
 import Konva from 'konva';
 
-const mockToast = vi.fn();
-
-vi.mock('@/hooks/use-toast', () => ({
-    useToast: () => ({
-        toast: mockToast,
-    }),
-}));
-
-vi.mock('@/store/useCanvasStore', () => ({
-    useCanvasStore: () => ({
-        lines: [],
-    }),
-}));
-
-vi.mock('@/store/useDownloadPopStore', () => ({
-    useDownloadPopStore: () => ({
-        exportWithBackground: false,
-        setExportWithBackground: vi.fn(),
-    }),
-}));
-
 describe('DownloadPop', () => {
     const mockStage = new Konva.Stage({
         container: document.createElement('div'),
