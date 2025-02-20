@@ -42,6 +42,39 @@ const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
     };
 };
 
+// Add this helper function after the existing helper functions
+const isPointNearText = (
+    px: number,
+    py: number,
+    text: TextElement,
+    stage: Konva.Stage,
+    eraserRadius: number,
+) => {
+    // Find the text node in the stage
+    const textNode = stage.findOne('#' + text.id) as Konva.Text;
+    if (!textNode) return false;
+
+    // Get the text node's bounding box
+    const box = textNode.getClientRect();
+
+    // Check if point is near the bounding box edges
+    const nearLeft = Math.abs(px - box.x) <= eraserRadius;
+    const nearRight = Math.abs(px - (box.x + box.width)) <= eraserRadius;
+    const nearTop = Math.abs(py - box.y) <= eraserRadius;
+    const nearBottom = Math.abs(py - (box.y + box.height)) <= eraserRadius;
+
+    // Check if point is inside or near the box
+    const insideX =
+        px >= box.x - eraserRadius && px <= box.x + box.width + eraserRadius;
+    const insideY =
+        py >= box.y - eraserRadius && px <= box.y + box.height + eraserRadius;
+
+    return (
+        (insideX && (nearTop || nearBottom)) ||
+        (insideY && (nearLeft || nearRight))
+    );
+};
+
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
     const [isDrawing, setIsDrawing] = useState(false);
@@ -263,6 +296,23 @@ export default function InfiniteCanvas() {
         // Only erase when actively erasing
         if (eraserMode && isErasing) {
             const eraserRadius = 40;
+
+            // Handle text erasing
+            const updatedTextElements = textElements.filter((text) => {
+                return !isPointNearText(
+                    stagePoint.x,
+                    stagePoint.y,
+                    text,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
+            if (updatedTextElements.length !== textElements.length) {
+                setTextElements(updatedTextElements);
+            }
+
+            // Handle line erasing (existing code)
             const updatedLines = lines.filter((line) => {
                 let shouldKeepLine = true;
                 for (let i = 0; i < line.points.length - 2; i += 2) {
@@ -308,6 +358,8 @@ export default function InfiniteCanvas() {
         if (isErasing) {
             setIsErasing(false);
             addToHistory(lines);
+            // Add history update for text elements
+            addToHistory(textElements);
         }
     };
 
@@ -614,7 +666,7 @@ export default function InfiniteCanvas() {
 
     return (
         <>
-            <div className="fixed z-10 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
+            <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
                 <div>
                     <Button
                         aria-label="hand"
@@ -710,7 +762,7 @@ export default function InfiniteCanvas() {
                     />
                 </div>
             </div>
-            <div className="fixed bottom-4 left-4 z-10 flex gap-2">
+            <div className="fixed bottom-4 left-4 z-20 flex gap-2">
                 <Button
                     aria-label="undo"
                     variant="default"
