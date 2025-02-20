@@ -496,6 +496,33 @@ export default function InfiniteCanvas() {
         }
     };
 
+    // Add this function right after handleTouchStart
+    const handleTextTap = (e: KonvaEventObject<TouchEvent>, textId: string) => {
+        const text = textElements.find((t) => t.id === textId);
+        if (!text) return;
+
+        setEditingText(text.text);
+        setSelectedTextId(textId);
+
+        const textarea = textareaRef.current;
+        const stage = e.target.getStage();
+        if (!textarea || !stage) return;
+
+        const textNode = stage.findOne(`#${textId}`) as Konva.Text;
+        const position = getTextPosition(textNode, stage);
+
+        // Position textarea for touch input
+        textarea.style.position = 'fixed';
+        textarea.style.top = `${position.y}px`;
+        textarea.style.left = `${position.x}px`;
+        textarea.style.display = 'block';
+        textarea.style.fontSize = `${text.fontSize}px`;
+        textarea.style.width = '80%'; // Use percentage for better mobile experience
+        textarea.style.height = 'auto';
+        textarea.focus();
+    };
+
+    // Modify the handleTouchMove function to include text erasing
     const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         const stage = e.target.getStage();
@@ -524,6 +551,23 @@ export default function InfiniteCanvas() {
 
         if (eraserMode) {
             const eraserRadius = 40;
+
+            // Handle text erasing
+            const updatedTextElements = textElements.filter((text) => {
+                return !isPointNearText(
+                    stagePoint.x,
+                    stagePoint.y,
+                    text,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
+            if (updatedTextElements.length !== textElements.length) {
+                setTextElements(updatedTextElements);
+            }
+
+            // Handle line erasing
             const updatedLines = lines.filter((line) => {
                 let shouldKeepLine = true;
                 for (let i = 0; i < line.points.length - 2; i += 2) {
@@ -558,6 +602,7 @@ export default function InfiniteCanvas() {
         setLines(lastLine);
     };
 
+    // Modify the handleTouchEnd function to include history updates for text
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         if (isDragging) {
@@ -565,11 +610,12 @@ export default function InfiniteCanvas() {
         }
         if (isDrawing) {
             setIsDrawing(false);
-            addToHistory(lines); // Add this line to update history
+            addToHistory(lines);
         }
         if (isErasing) {
             setIsErasing(false);
-            addToHistory(lines); // Add this line to update history
+            addToHistory(lines);
+            addToHistory(textElements);
         }
     };
 
@@ -875,6 +921,45 @@ export default function InfiniteCanvas() {
                         }
                         handleStageClick(e);
                     }}
+                    onTap={(e) => {
+                        if (textMode) {
+                            const stage = e.target.getStage();
+                            if (!stage) return;
+
+                            const point = stage.getPointerPosition();
+                            if (!point) return;
+
+                            const stagePoint = {
+                                x: (point.x - stagePos.x) / stageScale,
+                                y: (point.y - stagePos.y) / stageScale,
+                            };
+
+                            const newId = `text-${Date.now()}`;
+                            const newText: TextElement = {
+                                x: stagePoint.x,
+                                y: stagePoint.y,
+                                text: '',
+                                fontSize: 20,
+                                fill: currentColor,
+                                id: newId,
+                            };
+
+                            setTextElements([...textElements, newText]);
+                            setSelectedTextId(newId);
+                            setEditingText('');
+
+                            const textarea = textareaRef.current;
+                            if (!textarea) return;
+
+                            textarea.style.position = 'fixed';
+                            textarea.style.top = `${point.y}px`;
+                            textarea.style.left = `${point.x}px`;
+                            textarea.style.display = 'block';
+                            textarea.style.width = '80%';
+                            textarea.style.height = 'auto';
+                            textarea.focus();
+                        }
+                    }}
                     ref={stageRef}
                     x={stagePos.x}
                     y={stagePos.y}
@@ -943,8 +1028,21 @@ export default function InfiniteCanvas() {
                                 onDblClick={(e) =>
                                     handleTextDblClick(e, text.id)
                                 }
-                                onDblTap={(e) => handleTextDblClick(e, text.id)}
+                                onDblTap={(e) => handleTextTap(e, text.id)}
                                 onClick={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(text.id);
+                                        setSelectedShape('text');
+                                    }
+                                }}
+                                onTap={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
                                         const transformer =
