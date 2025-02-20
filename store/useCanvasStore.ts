@@ -2,7 +2,8 @@ import { create } from 'zustand';
 
 interface CanvasState {
     lines: DrawLine[];
-    history: DrawLine[][];
+    textElements: TextElement[];
+    history: { lines: DrawLine[]; textElements: TextElement[] }[];
     currentStep: number;
     setLines: (lines: DrawLine[]) => void;
     addToHistory: (lines: DrawLine[]) => void;
@@ -10,21 +11,27 @@ interface CanvasState {
     redo: () => void;
     canUndo: () => boolean;
     canRedo: () => boolean;
+    setTextElements: (textElements: TextElement[]) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     lines: [],
-    history: [[]],
+    textElements: [],
+    history: [{ lines: [], textElements: [] }],
     currentStep: 0,
+
+    setTextElements: (textElements) => {
+        set({ textElements });
+    },
 
     setLines: (lines) => {
         set({ lines });
     },
 
     addToHistory: (lines) => {
-        const { currentStep, history } = get();
+        const { currentStep, history, textElements } = get();
         const newHistory = history.slice(0, currentStep + 1);
-        newHistory.push([...lines]);
+        newHistory.push({ lines: [...lines], textElements: [...textElements] });
         set({
             history: newHistory,
             currentStep: currentStep + 1,
@@ -38,7 +45,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             const newStep = currentStep - 1;
             set({
                 currentStep: newStep,
-                lines: [...history[newStep]],
+                lines: [...history[newStep].lines],
+                textElements: [...history[newStep].textElements],
             });
         }
     },
@@ -49,7 +57,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             const newStep = currentStep + 1;
             set({
                 currentStep: newStep,
-                lines: [...history[newStep]],
+                lines: [...history[newStep].lines],
+                textElements: [...history[newStep].textElements],
             });
         }
     },

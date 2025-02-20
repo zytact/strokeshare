@@ -8,3 +8,12 @@ interface DrawLine {
     color: string;
     strokeWidth?: number;
 }
+
+interface TextElement {
+    x: number;
+    y: number;
+    text: string;
+    fontSize: number;
+    fill: string;
+    id: string;
+}
