@@ -1028,7 +1028,9 @@ export default function InfiniteCanvas() {
                                 onDblClick={(e) =>
                                     handleTextDblClick(e, text.id)
                                 }
-                                onDblTap={(e) => handleTextTap(e, text.id)}
+                                onDblTap={(e: KonvaEventObject<TouchEvent>) =>
+                                    handleTextTap(e, text.id)
+                                }
                                 onClick={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
