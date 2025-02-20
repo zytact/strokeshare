@@ -657,16 +657,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Add text mode handler
-    const handleTextMode = () => {
-        if (eraserMode) {
-            setEraserMode(false);
-        }
-        setTextMode(!textMode);
-        setSelectedId(null);
-        resetTransformer();
-    };
-
     // Update the handleStageClick function
     const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
         if (!textMode) return;
@@ -896,7 +886,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     lineHeight: '1.2',
                 }}
-                className="var(--background) font-excalifont fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 text-3xl outline-none"
+                className="var(--background) fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 font-excalifont text-3xl outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1028,7 +1018,9 @@ export default function InfiniteCanvas() {
                                 onDblClick={(e) =>
                                     handleTextDblClick(e, text.id)
                                 }
-                                onDblTap={(e) => handleTextTap(e, text.id)}
+                                onDblTap={(e: KonvaEventObject<TouchEvent>) =>
+                                    handleTextTap(e, text.id)
+                                }
                                 onClick={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
@@ -1058,7 +1050,6 @@ export default function InfiniteCanvas() {
                                 onTransform={(e) => {
                                     const node = e.target;
                                     const scaleX = node.scaleX();
-                                    const scaleY = node.scaleY();
 
                                     // Update the text element with new position and scale
                                     const updatedTexts = textElements.map(
