@@ -91,6 +91,15 @@ export default function InfiniteCanvas() {
         setSelectedShape(null);
     };
 
+    // Add this helper function after the state declarations
+    const disableAllModes = () => {
+        setDragModeEnabled(false);
+        setMoveMode(false);
+        setEraserMode(false);
+        setTextMode(false);
+        resetTransformer();
+    };
+
     // Update the moveMode effect
     useEffect(() => {
         if (!moveMode) {
@@ -610,7 +619,14 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="hand"
                         variant={dragModeEnabled ? 'secondary' : 'default'}
-                        onClick={() => setDragModeEnabled(!dragModeEnabled)}
+                        onClick={() => {
+                            if (dragModeEnabled) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setDragModeEnabled(true);
+                            }
+                        }}
                     >
                         <Hand className="h-4 w-4" />
                     </Button>
@@ -619,7 +635,14 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="move"
                         variant={moveMode ? 'secondary' : 'default'}
-                        onClick={() => setMoveMode(!moveMode)}
+                        onClick={() => {
+                            if (moveMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setMoveMode(true);
+                            }
+                        }}
                     >
                         <MoveUpLeft className="h-4 w-4" />
                     </Button>
@@ -629,8 +652,12 @@ export default function InfiniteCanvas() {
                         aria-label="eraser"
                         variant={eraserMode ? 'secondary' : 'default'}
                         onClick={() => {
-                            setEraserMode(!eraserMode);
-                            setDragModeEnabled(false);
+                            if (eraserMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setEraserMode(true);
+                            }
                         }}
                     >
                         <Eraser className="h-4 w-4" />{' '}
@@ -640,7 +667,14 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="text"
                         variant={textMode ? 'secondary' : 'default'}
-                        onClick={handleTextMode}
+                        onClick={() => {
+                            if (textMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setTextMode(true);
+                            }
+                        }}
                     >
                         <Type className="h-4 w-4" />
                     </Button>
