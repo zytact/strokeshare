@@ -9,6 +9,9 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                excalifont: ['var(--font-excalifont)', 'cursive'],
+            },
             colors: {
                 background: 'hsl(var(--background))',
                 foreground: 'hsl(var(--foreground))',

@@ -494,6 +494,44 @@ export default function InfiniteCanvas() {
                 },
             ]);
         }
+
+        if (textMode) {
+            const stage = e.target.getStage();
+            if (!stage) return;
+
+            const point = stage.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const newId = `text-${Date.now()}`;
+            const newText: TextElement = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                text: '',
+                fontSize: 30,
+                fill: currentColor,
+                id: newId,
+            };
+
+            setTextElements([...textElements, newText]);
+            setSelectedTextId(newId);
+            setEditingText('');
+
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            textarea.style.position = 'fixed';
+            textarea.style.top = `${point.y}px`;
+            textarea.style.left = `${point.x}px`;
+            textarea.style.display = 'block';
+            textarea.style.width = '80%';
+            textarea.style.height = 'auto';
+            textarea.focus();
+        }
     };
 
     // Add this function right after handleTouchStart
@@ -649,7 +687,7 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: 20,
+            fontSize: 30,
             fill: currentColor,
             id: newId,
         };
@@ -858,7 +896,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     lineHeight: '1.2',
                 }}
-                className="text-md var(--background) fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 outline-none"
+                className="var(--background) font-excalifont fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 text-3xl outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -920,45 +958,6 @@ export default function InfiniteCanvas() {
                             }
                         }
                         handleStageClick(e);
-                    }}
-                    onTap={(e) => {
-                        if (textMode) {
-                            const stage = e.target.getStage();
-                            if (!stage) return;
-
-                            const point = stage.getPointerPosition();
-                            if (!point) return;
-
-                            const stagePoint = {
-                                x: (point.x - stagePos.x) / stageScale,
-                                y: (point.y - stagePos.y) / stageScale,
-                            };
-
-                            const newId = `text-${Date.now()}`;
-                            const newText: TextElement = {
-                                x: stagePoint.x,
-                                y: stagePoint.y,
-                                text: '',
-                                fontSize: 20,
-                                fill: currentColor,
-                                id: newId,
-                            };
-
-                            setTextElements([...textElements, newText]);
-                            setSelectedTextId(newId);
-                            setEditingText('');
-
-                            const textarea = textareaRef.current;
-                            if (!textarea) return;
-
-                            textarea.style.position = 'fixed';
-                            textarea.style.top = `${point.y}px`;
-                            textarea.style.left = `${point.x}px`;
-                            textarea.style.display = 'block';
-                            textarea.style.width = '80%';
-                            textarea.style.height = 'auto';
-                            textarea.focus();
-                        }
                     }}
                     ref={stageRef}
                     x={stagePos.x}
@@ -1023,6 +1022,7 @@ export default function InfiniteCanvas() {
                                 y={text.y}
                                 text={text.text}
                                 fontSize={text.fontSize}
+                                fontFamily="Excalifont"
                                 fill={text.fill}
                                 draggable={moveMode}
                                 onDblClick={(e) =>
