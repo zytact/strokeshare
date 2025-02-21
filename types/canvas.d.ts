@@ -29,4 +29,5 @@ interface Rectangle {
     strokeWidth?: number;
     isDashed?: boolean;
     cornerRadius?: number;
+    fill?: string;
 }

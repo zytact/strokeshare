@@ -18,6 +18,8 @@ import {
     ArrowRight,
     SquareDashed,
     Square,
+    PaintBucket,
+    Brush, // Add Brush import
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -178,6 +180,8 @@ export default function InfiniteCanvas() {
     const [dashedMode, setDashedMode] = useState(false);
     const [rectangleMode, setRectangleMode] = useState(false);
     const [startPoint, setStartPoint] = useState<Point | null>(null);
+    const [fillMode, setFillMode] = useState(false);
+    const [strokeColorMode, setStrokeColorMode] = useState(false); // Add new state for stroke color mode
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -429,6 +433,7 @@ export default function InfiniteCanvas() {
                 strokeWidth: strokeWidth,
                 isDashed: dashedMode,
                 cornerRadius: 8, // Add this line
+                fill: undefined,
             };
             setRectangles([...rectangles, newRect]);
             return;
@@ -824,6 +829,7 @@ export default function InfiniteCanvas() {
                 strokeWidth: strokeWidth,
                 isDashed: dashedMode,
                 cornerRadius: 8, // Add this line
+                fill: undefined,
             };
             setRectangles([...rectangles, newRect]);
             return;
@@ -1333,6 +1339,86 @@ export default function InfiniteCanvas() {
                         <SquareDashed className="h-4 w-4" />
                     </Button>
                 </div>
+                <div className="relative">
+                    <Button
+                        aria-label="fill"
+                        variant={fillMode ? 'secondary' : 'default'}
+                        className="relative"
+                        disabled={!moveMode || selectedShape !== 'rectangle'}
+                    >
+                        <input
+                            type="color"
+                            onChange={(e) => {
+                                const newColor = e.target.value;
+                                if (
+                                    moveMode &&
+                                    selectedId &&
+                                    selectedShape === 'rectangle'
+                                ) {
+                                    const newRectangles = [...rectangles];
+                                    const rectIndex = parseInt(selectedId);
+                                    newRectangles[rectIndex] = {
+                                        ...newRectangles[rectIndex],
+                                        fill: newColor,
+                                    };
+                                    setRectangles(newRectangles);
+                                    addToHistory(newRectangles);
+                                }
+                            }}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            disabled={
+                                !moveMode || selectedShape !== 'rectangle'
+                            }
+                        />
+                        <PaintBucket className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="relative">
+                    <Button
+                        aria-label="stroke-color"
+                        variant={strokeColorMode ? 'secondary' : 'default'}
+                        className="relative"
+                        disabled={!moveMode || !selectedShape}
+                    >
+                        <input
+                            type="color"
+                            onChange={(e) => {
+                                const newColor = e.target.value;
+                                if (moveMode && selectedId && selectedShape) {
+                                    switch (selectedShape) {
+                                        case 'line':
+                                            const newLines = [...lines];
+                                            const lineIndex =
+                                                parseInt(selectedId);
+                                            newLines[lineIndex] = {
+                                                ...newLines[lineIndex],
+                                                color: newColor,
+                                            };
+                                            setLines(newLines);
+                                            addToHistory(newLines);
+                                            break;
+                                        case 'rectangle':
+                                            const newRectangles = [
+                                                ...rectangles,
+                                            ];
+                                            const rectIndex =
+                                                parseInt(selectedId);
+                                            newRectangles[rectIndex] = {
+                                                ...newRectangles[rectIndex],
+                                                color: newColor,
+                                            };
+                                            setRectangles(newRectangles);
+                                            addToHistory(newRectangles);
+                                            break;
+                                    }
+                                }
+                            }}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            disabled={!moveMode || !selectedShape}
+                        />
+                        <Brush className="h-4 w-4" />
+                    </Button>
+                </div>
                 {!eraserMode && (
                     <>
                         <div>
@@ -1348,12 +1434,10 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
-                        <div>
-                            <StrokeWidth
-                                strokeWidth={strokeWidth}
-                                onStrokeWidthChange={setStrokeWidth}
-                            />
-                        </div>
+                        <StrokeWidth
+                            strokeWidth={strokeWidth}
+                            onStrokeWidthChange={setStrokeWidth}
+                        />
                     </>
                 )}
                 <div className="block sm:hidden">
@@ -1593,6 +1677,7 @@ export default function InfiniteCanvas() {
                                 strokeWidth={rect.strokeWidth}
                                 dash={rect.isDashed ? [10, 10] : undefined}
                                 draggable={moveMode}
+                                fill={rect.fill}
                                 onClick={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
