@@ -977,6 +977,13 @@ export default function InfiniteCanvas() {
         context.stroke();
     };
 
+    const getSelectedLine = () => {
+        if (selectedId && selectedShape === 'line') {
+            return lines[parseInt(selectedId)];
+        }
+        return null;
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1079,8 +1086,33 @@ export default function InfiniteCanvas() {
                 <div>
                     <Button
                         aria-label="dashed-line"
-                        variant={dashedMode ? 'secondary' : 'default'}
-                        onClick={() => setDashedMode(!dashedMode)}
+                        variant={
+                            moveMode && getSelectedLine()?.isDashed
+                                ? 'secondary'
+                                : dashedMode
+                                  ? 'secondary'
+                                  : 'default'
+                        }
+                        onClick={() => {
+                            if (
+                                moveMode &&
+                                selectedId &&
+                                selectedShape === 'line'
+                            ) {
+                                // Toggle dash for selected line
+                                const newLines = [...lines];
+                                const lineIndex = parseInt(selectedId);
+                                newLines[lineIndex] = {
+                                    ...newLines[lineIndex],
+                                    isDashed: !newLines[lineIndex].isDashed,
+                                };
+                                setLines(newLines);
+                                addToHistory(newLines);
+                            } else {
+                                // Toggle global dash mode
+                                setDashedMode(!dashedMode);
+                            }
+                        }}
                     >
                         <SquareDashed className="h-4 w-4" />
                     </Button>
