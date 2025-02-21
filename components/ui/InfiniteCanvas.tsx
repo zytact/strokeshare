@@ -14,6 +14,7 @@ import {
     ZoomIn,
     ZoomOut,
     Type,
+    Minus as LineIcon,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -121,6 +122,8 @@ export default function InfiniteCanvas() {
     );
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(5);
+    const [lineSegmentMode, setLineSegmentMode] = useState(false);
+    const [lineStart, setLineStart] = useState<Point | null>(null);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -139,6 +142,7 @@ export default function InfiniteCanvas() {
         setMoveMode(false);
         setEraserMode(false);
         setTextMode(false);
+        setLineSegmentMode(false);
         resetTransformer();
     };
 
@@ -258,13 +262,68 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (evt.button === 0 && !dragModeEnabled && !moveMode && !eraserMode) {
-            setIsDrawing(true);
-            const stagePoint = {
-                x: (point.x - stagePos.x) / stageScale,
-                y: (point.y - stagePos.y) / stageScale,
-            };
+        const stagePoint = {
+            x: (point.x - stagePos.x) / stageScale,
+            y: (point.y - stagePos.y) / stageScale,
+        };
 
+        if (evt.button === 0 && lineSegmentMode) {
+            if (!lineStart) {
+                setLineStart(stagePoint);
+                const newLine = {
+                    points: [
+                        stagePoint.x,
+                        stagePoint.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                    color: currentColor,
+                    strokeWidth: strokeWidth,
+                };
+                setLines([...lines, newLine]);
+            } else {
+                const lastLine = [...lines];
+                const lineIndex = lastLine.length - 1;
+                lastLine[lineIndex] = {
+                    ...lastLine[lineIndex],
+                    points: [
+                        lineStart.x,
+                        lineStart.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                };
+                setLines(lastLine);
+                setLineStart(null);
+
+                // Add to history after completing the line
+                addToHistory(lastLine);
+
+                // Select the line for transformation if in move mode
+                if (moveMode) {
+                    const stage = e.target.getStage();
+                    if (stage) {
+                        const line = stage.findOne('#line-' + lineIndex);
+                        if (line && transformerRef.current) {
+                            transformerRef.current.nodes([line]);
+                            transformerRef.current.getLayer()?.batchDraw();
+                            setSelectedId(String(lineIndex));
+                            setSelectedShape('line');
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        if (
+            evt.button === 0 &&
+            !dragModeEnabled &&
+            !moveMode &&
+            !eraserMode &&
+            !lineSegmentMode
+        ) {
+            setIsDrawing(true);
             setLines([
                 ...lines,
                 {
@@ -342,6 +401,18 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (lineSegmentMode && lineStart) {
+            const lastLine = [...lines];
+            lastLine[lastLine.length - 1].points = [
+                lineStart.x,
+                lineStart.y,
+                stagePoint.x,
+                stagePoint.y,
+            ];
+            setLines(lastLine);
+            return;
+        }
+
         if (!isDrawing) return;
 
         const lastLine = [...lines];
@@ -413,7 +484,7 @@ export default function InfiniteCanvas() {
         const newLines = [...lines];
         const line = newLines[lineIndex];
 
-        // Transform all points
+        // For line segments, we only have 2 points (start and end)
         const newPoints: number[] = [];
         for (let i = 0; i < line.points.length; i += 2) {
             const point = {
@@ -451,6 +522,7 @@ export default function InfiniteCanvas() {
         };
 
         setLines(newLines);
+        addToHistory(newLines);
 
         // Reset the position as the points now include the transformation
         node.x(0);
@@ -485,13 +557,59 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!dragModeEnabled && !moveMode) {
-            setIsDrawing(true);
-            const stagePoint = {
-                x: (point.x - stagePos.x) / stageScale,
-                y: (point.y - stagePos.y) / stageScale,
-            };
+        const stagePoint = {
+            x: (point.x - stagePos.x) / stageScale,
+            y: (point.y - stagePos.y) / stageScale,
+        };
 
+        if (lineSegmentMode) {
+            if (!lineStart) {
+                setLineStart(stagePoint);
+                const newLine = {
+                    points: [
+                        stagePoint.x,
+                        stagePoint.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                    color: currentColor,
+                    strokeWidth: strokeWidth,
+                };
+                setLines([...lines, newLine]);
+            } else {
+                const lastLine = [...lines];
+                const lineIndex = lastLine.length - 1;
+                lastLine[lineIndex] = {
+                    ...lastLine[lineIndex],
+                    points: [
+                        lineStart.x,
+                        lineStart.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                };
+                setLines(lastLine);
+                setLineStart(null);
+                addToHistory(lastLine);
+
+                // Select the line for transformation if in move mode
+                if (moveMode) {
+                    if (stage) {
+                        const line = stage.findOne('#line-' + lineIndex);
+                        if (line && transformerRef.current) {
+                            transformerRef.current.nodes([line]);
+                            transformerRef.current.getLayer()?.batchDraw();
+                            setSelectedId(String(lineIndex));
+                            setSelectedShape('line');
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
+            setIsDrawing(true);
             setLines([
                 ...lines,
                 {
@@ -630,6 +748,18 @@ export default function InfiniteCanvas() {
                 return shouldKeepLine;
             });
             setLines(updatedLines);
+            return;
+        }
+
+        if (lineSegmentMode && lineStart) {
+            const lastLine = [...lines];
+            lastLine[lastLine.length - 1].points = [
+                lineStart.x,
+                lineStart.y,
+                stagePoint.x,
+                stagePoint.y,
+            ];
+            setLines(lastLine);
             return;
         }
 
@@ -807,6 +937,22 @@ export default function InfiniteCanvas() {
                         <Type className="h-4 w-4" />
                     </Button>
                 </div>
+                <div>
+                    <Button
+                        aria-label="line"
+                        variant={lineSegmentMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (lineSegmentMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setLineSegmentMode(true);
+                            }
+                        }}
+                    >
+                        <LineIcon className="h-4 w-4" />
+                    </Button>
+                </div>
                 {!eraserMode && (
                     <>
                         <div>
@@ -976,7 +1122,7 @@ export default function InfiniteCanvas() {
                                 points={line.points}
                                 stroke={line.color}
                                 strokeWidth={line.strokeWidth || strokeWidth}
-                                tension={0.5}
+                                tension={0} // Set tension to 0 for straight lines
                                 lineCap="round"
                                 lineJoin="round"
                                 globalCompositeOperation="source-over"

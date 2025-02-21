@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(12);
+        expect(buttons).toHaveLength(13);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
