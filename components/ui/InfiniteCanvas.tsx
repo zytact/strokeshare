@@ -1,5 +1,5 @@
 'use client';
-import { Stage, Layer, Line, Transformer, Text } from 'react-konva';
+import { Stage, Layer, Line, Transformer, Text, Rect } from 'react-konva';
 import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
@@ -17,6 +17,9 @@ import {
     Minus as LineIcon,
     ArrowRight,
     SquareDashed,
+    Square,
+    PaintBucket,
+    Brush, // Add Brush import
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -88,6 +91,51 @@ const isPointNearText = (
     );
 };
 
+const isPointNearRectangle = (
+    px: number,
+    py: number,
+    rect: Rectangle,
+    stage: Konva.Stage,
+    eraserRadius: number,
+) => {
+    // Convert the rectangle's position to the same coordinate space as the eraser point
+    const scale = stage.scaleX();
+    const box = {
+        x: rect.x * scale + stage.x(),
+        y: rect.y * scale + stage.y(),
+        width: rect.width * scale,
+        height: rect.height * scale,
+    };
+
+    // Convert the point to the same coordinate space
+    const point = {
+        x: px * scale + stage.x(),
+        y: py * scale + stage.y(),
+    };
+
+    // Adjust eraserRadius for stage scale
+    const scaledRadius = eraserRadius * scale;
+
+    // Check if point is near the rectangle edges
+    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
+    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
+    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
+    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
+
+    // Check if point is inside or near the rectangle
+    const insideX =
+        point.x >= box.x - scaledRadius &&
+        point.x <= box.x + box.width + scaledRadius;
+    const insideY =
+        point.y >= box.y - scaledRadius &&
+        point.y <= box.y + box.height + scaledRadius;
+
+    return (
+        (insideX && (nearTop || nearBottom)) ||
+        (insideY && (nearLeft || nearRight))
+    );
+};
+
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
     const [isDrawing, setIsDrawing] = useState(false);
@@ -116,18 +164,22 @@ export default function InfiniteCanvas() {
         redo,
         canUndo,
         canRedo,
+        rectangles,
+        setRectangles,
     } = useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [selectedShape, setSelectedShape] = useState<'line' | 'text' | null>(
-        null,
-    );
+    const [selectedShape, setSelectedShape] = useState<
+        'line' | 'text' | 'rectangle' | null
+    >(null);
     const [moveMode, setMoveMode] = useState(false);
-    const [strokeWidth, setStrokeWidth] = useState(5);
+    const [strokeWidth, setStrokeWidth] = useState(3);
     const [lineSegmentMode, setLineSegmentMode] = useState(false);
     const [lineStart, setLineStart] = useState<Point | null>(null);
     const [arrowMode, setArrowMode] = useState(false);
     const [dashedMode, setDashedMode] = useState(false);
+    const [rectangleMode, setRectangleMode] = useState(false);
+    const [startPoint, setStartPoint] = useState<Point | null>(null);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -148,6 +200,7 @@ export default function InfiniteCanvas() {
         setTextMode(false);
         setLineSegmentMode(false);
         setArrowMode(false);
+        setRectangleMode(false);
         resetTransformer();
     };
 
@@ -169,6 +222,8 @@ export default function InfiniteCanvas() {
                 shape = stage.findOne('#line-' + selectedId);
             } else if (selectedShape === 'text') {
                 shape = stage.findOne('#' + selectedId);
+            } else if (selectedShape === 'rectangle') {
+                shape = stage.findOne('#rect-' + selectedId);
             }
 
             if (shape) {
@@ -357,13 +412,39 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (evt.button === 0 && rectangleMode) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            setStartPoint(stagePoint);
+            const newRect = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                width: 0,
+                height: 0,
+                color: currentColor,
+                strokeWidth: strokeWidth,
+                isDashed: dashedMode,
+                cornerRadius: 8, // Add this line
+                fill: undefined,
+            };
+            setRectangles([...rectangles, newRect]);
+            return;
+        }
+
         if (
             evt.button === 0 &&
             !dragModeEnabled &&
             !moveMode &&
             !eraserMode &&
             !lineSegmentMode &&
-            !arrowMode
+            !arrowMode &&
+            !rectangleMode
         ) {
             setIsDrawing(true);
             setLines([
@@ -440,7 +521,21 @@ export default function InfiniteCanvas() {
                 }
                 return shouldKeepLine;
             });
+
+            // Handle rectangle erasing
+            const updatedRectangles = rectangles.filter((rect) => {
+                return !isPointNearRectangle(
+                    stagePoint.x,
+                    stagePoint.y,
+                    rect,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
+            setTextElements(updatedTextElements);
+            setRectangles(updatedRectangles);
             return;
         }
 
@@ -453,6 +548,26 @@ export default function InfiniteCanvas() {
                 stagePoint.y,
             ];
             setLines(lastLine);
+            return;
+        }
+
+        if (rectangleMode && startPoint) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const lastRect = [...rectangles];
+            const index = lastRect.length - 1;
+            lastRect[index] = {
+                ...lastRect[index],
+                width: stagePoint.x - startPoint.x,
+                height: stagePoint.y - startPoint.y,
+            };
+            setRectangles(lastRect);
             return;
         }
 
@@ -481,6 +596,12 @@ export default function InfiniteCanvas() {
             addToHistory(lines);
             // Add history update for text elements
             addToHistory(textElements);
+            addToHistory(rectangles);
+        }
+        if (rectangleMode && startPoint) {
+            setStartPoint(null);
+            addToHistory(rectangles);
+            return;
         }
     };
 
@@ -687,6 +808,31 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (rectangleMode) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            setStartPoint(stagePoint);
+            const newRect = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                width: 0,
+                height: 0,
+                color: currentColor,
+                strokeWidth: strokeWidth,
+                isDashed: dashedMode,
+                cornerRadius: 8, // Add this line
+                fill: undefined,
+            };
+            setRectangles([...rectangles, newRect]);
+            return;
+        }
+
         if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
             setIsDrawing(true);
             setLines([
@@ -827,7 +973,21 @@ export default function InfiniteCanvas() {
                 }
                 return shouldKeepLine;
             });
+
+            // Handle rectangle erasing
+            const updatedRectangles = rectangles.filter((rect) => {
+                return !isPointNearRectangle(
+                    stagePoint.x,
+                    stagePoint.y,
+                    rect,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
+            setTextElements(updatedTextElements);
+            setRectangles(updatedRectangles);
             return;
         }
 
@@ -840,6 +1000,26 @@ export default function InfiniteCanvas() {
                 stagePoint.y,
             ];
             setLines(lastLine);
+            return;
+        }
+
+        if (rectangleMode && startPoint) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const lastRect = [...rectangles];
+            const index = lastRect.length - 1;
+            lastRect[index] = {
+                ...lastRect[index],
+                width: stagePoint.x - startPoint.x,
+                height: stagePoint.y - startPoint.y,
+            };
+            setRectangles(lastRect);
             return;
         }
 
@@ -868,6 +1048,12 @@ export default function InfiniteCanvas() {
             setIsErasing(false);
             addToHistory(lines);
             addToHistory(textElements);
+            addToHistory(rectangles);
+        }
+        if (rectangleMode && startPoint) {
+            setStartPoint(null);
+            addToHistory(rectangles);
+            return;
         }
     };
 
@@ -984,6 +1170,13 @@ export default function InfiniteCanvas() {
         return null;
     };
 
+    const getSelectedRect = () => {
+        if (selectedId && selectedShape === 'rectangle') {
+            return rectangles[parseInt(selectedId)];
+        }
+        return null;
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1085,29 +1278,56 @@ export default function InfiniteCanvas() {
                 </div>
                 <div>
                     <Button
+                        aria-label="rectangle"
+                        variant={rectangleMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (rectangleMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setRectangleMode(true);
+                            }
+                        }}
+                    >
+                        <Square className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
                         aria-label="dashed-line"
                         variant={
-                            moveMode && getSelectedLine()?.isDashed
+                            moveMode &&
+                            (getSelectedLine()?.isDashed ||
+                                getSelectedRect()?.isDashed)
                                 ? 'secondary'
                                 : dashedMode
                                   ? 'secondary'
                                   : 'default'
                         }
                         onClick={() => {
-                            if (
-                                moveMode &&
-                                selectedId &&
-                                selectedShape === 'line'
-                            ) {
-                                // Toggle dash for selected line
-                                const newLines = [...lines];
-                                const lineIndex = parseInt(selectedId);
-                                newLines[lineIndex] = {
-                                    ...newLines[lineIndex],
-                                    isDashed: !newLines[lineIndex].isDashed,
-                                };
-                                setLines(newLines);
-                                addToHistory(newLines);
+                            if (moveMode && selectedId) {
+                                if (selectedShape === 'line') {
+                                    // Toggle dash for selected line
+                                    const newLines = [...lines];
+                                    const lineIndex = parseInt(selectedId);
+                                    newLines[lineIndex] = {
+                                        ...newLines[lineIndex],
+                                        isDashed: !newLines[lineIndex].isDashed,
+                                    };
+                                    setLines(newLines);
+                                    addToHistory(newLines);
+                                } else if (selectedShape === 'rectangle') {
+                                    // Toggle dash for selected rectangle
+                                    const newRectangles = [...rectangles];
+                                    const rectIndex = parseInt(selectedId);
+                                    newRectangles[rectIndex] = {
+                                        ...newRectangles[rectIndex],
+                                        isDashed:
+                                            !newRectangles[rectIndex].isDashed,
+                                    };
+                                    setRectangles(newRectangles);
+                                    addToHistory(newRectangles);
+                                }
                             } else {
                                 // Toggle global dash mode
                                 setDashedMode(!dashedMode);
@@ -1117,12 +1337,90 @@ export default function InfiniteCanvas() {
                         <SquareDashed className="h-4 w-4" />
                     </Button>
                 </div>
+                <div className="relative">
+                    <Button
+                        aria-label="fill"
+                        className="relative"
+                        disabled={!moveMode || selectedShape !== 'rectangle'}
+                    >
+                        <input
+                            type="color"
+                            onChange={(e) => {
+                                const newColor = e.target.value;
+                                if (
+                                    moveMode &&
+                                    selectedId &&
+                                    selectedShape === 'rectangle'
+                                ) {
+                                    const newRectangles = [...rectangles];
+                                    const rectIndex = parseInt(selectedId);
+                                    newRectangles[rectIndex] = {
+                                        ...newRectangles[rectIndex],
+                                        fill: newColor,
+                                    };
+                                    setRectangles(newRectangles);
+                                    addToHistory(newRectangles);
+                                }
+                            }}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            disabled={
+                                !moveMode || selectedShape !== 'rectangle'
+                            }
+                        />
+                        <PaintBucket className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="relative">
+                    <Button
+                        aria-label="stroke-color"
+                        className="relative"
+                        disabled={!moveMode || !selectedShape}
+                    >
+                        <input
+                            type="color"
+                            onChange={(e) => {
+                                const newColor = e.target.value;
+                                if (moveMode && selectedId && selectedShape) {
+                                    switch (selectedShape) {
+                                        case 'line':
+                                            const newLines = [...lines];
+                                            const lineIndex =
+                                                parseInt(selectedId);
+                                            newLines[lineIndex] = {
+                                                ...newLines[lineIndex],
+                                                color: newColor,
+                                            };
+                                            setLines(newLines);
+                                            addToHistory(newLines);
+                                            break;
+                                        case 'rectangle':
+                                            const newRectangles = [
+                                                ...rectangles,
+                                            ];
+                                            const rectIndex =
+                                                parseInt(selectedId);
+                                            newRectangles[rectIndex] = {
+                                                ...newRectangles[rectIndex],
+                                                color: newColor,
+                                            };
+                                            setRectangles(newRectangles);
+                                            addToHistory(newRectangles);
+                                            break;
+                                    }
+                                }
+                            }}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            disabled={!moveMode || !selectedShape}
+                        />
+                        <Brush className="h-4 w-4" />
+                    </Button>
+                </div>
                 {!eraserMode && (
                     <>
                         <div>
                             <Button className="p-2 backdrop-blur">
                                 <input
-                                    aria-label="color"
+                                    aria-label="draw-color"
                                     type="color"
                                     onChange={(e) =>
                                         setCurrentColor(e.target.value)
@@ -1132,12 +1430,10 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
-                        <div>
-                            <StrokeWidth
-                                strokeWidth={strokeWidth}
-                                onStrokeWidthChange={setStrokeWidth}
-                            />
-                        </div>
+                        <StrokeWidth
+                            strokeWidth={strokeWidth}
+                            onStrokeWidthChange={setStrokeWidth}
+                        />
                     </>
                 )}
                 <div className="block sm:hidden">
@@ -1364,6 +1660,65 @@ export default function InfiniteCanvas() {
                                             line.points[3],
                                         );
                                     }
+                                }}
+                            />
+                        ))}
+                        {rectangles.map((rect, i) => (
+                            <Rect
+                                key={`rect-${i}`}
+                                id={`rect-${i}`}
+                                {...rect}
+                                cornerRadius={rect.cornerRadius} // Add this line
+                                stroke={rect.color}
+                                strokeWidth={rect.strokeWidth}
+                                dash={rect.isDashed ? [10, 10] : undefined}
+                                draggable={moveMode}
+                                fill={rect.fill}
+                                onClick={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(String(i));
+                                        setSelectedShape('rectangle');
+                                    }
+                                }}
+                                onTouchStart={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(String(i));
+                                        setSelectedShape('rectangle');
+                                    }
+                                }}
+                                onTransformEnd={(e) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+
+                                    const newRectangles = [...rectangles];
+                                    newRectangles[i] = {
+                                        ...newRectangles[i],
+                                        x: node.x(),
+                                        y: node.y(),
+                                        width: node.width() * scaleX,
+                                        height: node.height() * scaleY,
+                                    };
+
+                                    setRectangles(newRectangles);
+                                    addToHistory(newRectangles);
                                 }}
                             />
                         ))}

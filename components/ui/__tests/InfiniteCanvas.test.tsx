@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(15);
+        expect(buttons).toHaveLength(18);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -98,9 +98,9 @@ describe('InfiniteCanvas', () => {
 
     it('changes color when color picker value changes', () => {
         render(<InfiniteCanvas />);
-        const colorPickerInput = screen.getByDisplayValue(
-            '#000000',
-        ) as HTMLInputElement;
+        const colorPickerInput = screen.getByRole('button', {
+            name: /draw-color/i,
+        }) as HTMLInputElement;
 
         fireEvent.change(colorPickerInput, { target: { value: '#ff0000' } });
         expect(colorPickerInput.value).toBe('#ff0000');
@@ -405,7 +405,7 @@ describe('StrokeWidth Component Responsiveness', () => {
 
         // Find the stroke width button by the Minus icon
         const strokeWidthButton = screen.getByRole('button', {
-            name: /5px/i, // Assuming default stroke width is 5
+            name: /3px/i, // Assuming default stroke width is 3
         });
 
         expect(strokeWidthButton).toBeVisible();
@@ -594,5 +594,58 @@ describe('InfiniteCanvas Dash Mode', () => {
         // Toggle dash off for selected line
         fireEvent.click(dashButton);
         expect(dashButton).toHaveClass('bg-primary');
+    });
+});
+
+describe('InfiniteCanvas Rectangle Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles rectangle mode when rectangle button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const rectangleButton = screen.getByRole('button', {
+            name: /rectangle/i,
+        });
+
+        // Click rectangle button
+        fireEvent.click(rectangleButton);
+        expect(rectangleButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(rectangleButton);
+        expect(rectangleButton).toHaveClass('bg-primary');
+    });
+
+    it('disables other modes when rectangle mode is enabled', () => {
+        render(<InfiniteCanvas />);
+        const rectangleButton = screen.getByRole('button', {
+            name: /rectangle/i,
+        });
+        const handButton = screen.getByRole('button', { name: /hand/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Enable rectangle mode
+        fireEvent.click(rectangleButton);
+
+        // Other buttons should not be in secondary mode
+        expect(handButton).not.toHaveClass('bg-secondary');
+        expect(eraserButton).not.toHaveClass('bg-secondary');
+    });
+
+    it('disables fill color button when no rectangle is selected', () => {
+        render(<InfiniteCanvas />);
+        const moveButton = screen.getByRole('button', { name: /move/i });
+
+        // Enable move mode without selecting any rectangle
+        fireEvent.click(moveButton);
+
+        // Fill button should be disabled
+        const fillButton = screen.getByRole('button', { name: /fill/i });
+        const fillInput = fillButton.querySelector('input[type="color"]');
+
+        expect(fillButton).toBeDisabled();
+        expect(fillInput).toBeDisabled();
     });
 });

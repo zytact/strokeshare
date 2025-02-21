@@ -3,21 +3,28 @@ import { create } from 'zustand';
 interface CanvasState {
     lines: DrawLine[];
     textElements: TextElement[];
-    history: { lines: DrawLine[]; textElements: TextElement[] }[];
+    rectangles: Rectangle[];
+    history: {
+        lines: DrawLine[];
+        textElements: TextElement[];
+        rectangles: Rectangle[];
+    }[];
     currentStep: number;
     setLines: (lines: DrawLine[]) => void;
-    addToHistory: (lines: DrawLine[] | TextElement[]) => void;
+    addToHistory: (lines: DrawLine[] | TextElement[] | Rectangle[]) => void;
     undo: () => void;
     redo: () => void;
     canUndo: () => boolean;
     canRedo: () => boolean;
     setTextElements: (textElements: TextElement[]) => void;
+    setRectangles: (rectangles: Rectangle[]) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     lines: [],
     textElements: [],
-    history: [{ lines: [], textElements: [] }],
+    rectangles: [],
+    history: [{ lines: [], textElements: [], rectangles: [] }],
     currentStep: 0,
 
     setTextElements: (textElements) => {
@@ -28,23 +35,36 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         set({ lines });
     },
 
-    addToHistory: (elements: DrawLine[] | TextElement[]) => {
-        const { currentStep, history, lines, textElements } = get();
+    setRectangles: (rectangles) => {
+        set({ rectangles });
+    },
+
+    addToHistory: (elements: DrawLine[] | TextElement[] | Rectangle[]) => {
+        const { currentStep, history, lines, textElements, rectangles } = get();
         const newHistory = history.slice(0, currentStep + 1);
         const isDrawLines = elements[0] && 'points' in elements[0];
+        const isRectangles = elements[0] && 'width' in elements[0];
+
         newHistory.push({
             lines: isDrawLines ? [...(elements as DrawLine[])] : [...lines],
-            textElements: !isDrawLines
-                ? [...(elements as TextElement[])]
-                : [...textElements],
+            textElements:
+                !isDrawLines && !isRectangles
+                    ? [...(elements as TextElement[])]
+                    : [...textElements],
+            rectangles: isRectangles
+                ? [...(elements as Rectangle[])]
+                : [...rectangles],
         });
+
         set({
             history: newHistory,
             currentStep: currentStep + 1,
             lines: isDrawLines ? (elements as DrawLine[]) : lines,
-            textElements: !isDrawLines
-                ? (elements as TextElement[])
-                : textElements,
+            textElements:
+                !isDrawLines && !isRectangles
+                    ? (elements as TextElement[])
+                    : textElements,
+            rectangles: isRectangles ? (elements as Rectangle[]) : rectangles,
         });
     },
 
@@ -56,6 +76,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 currentStep: newStep,
                 lines: [...history[newStep].lines],
                 textElements: [...history[newStep].textElements],
+                rectangles: [...history[newStep].rectangles],
             });
         }
     },
@@ -68,6 +89,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 currentStep: newStep,
                 lines: [...history[newStep].lines],
                 textElements: [...history[newStep].textElements],
+                rectangles: [...history[newStep].rectangles],
             });
         }
     },

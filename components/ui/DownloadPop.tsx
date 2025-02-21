@@ -37,7 +37,7 @@ export function DownloadPop({
     const { exportWithBackground, setExportWithBackground } =
         useDownloadPopStore();
 
-    const { lines, textElements } = useCanvasStore();
+    const { lines, textElements, rectangles } = useCanvasStore();
 
     const handlePNG = () => {
         if (!stageRef.current) return;
@@ -110,6 +110,21 @@ export function DownloadPop({
         }
 
         svg += `<g transform="translate(${stagePos.x},${stagePos.y}) scale(${stageScale})">`;
+
+        // Add rectangles first (to be in the background)
+        rectangles.forEach((rect) => {
+            svg += `<rect 
+                x="${rect.x}" 
+                y="${rect.y}" 
+                width="${rect.width}" 
+                height="${rect.height}" 
+                stroke="${rect.color}"
+                stroke-width="${rect.strokeWidth || strokeWidth}"
+                ${rect.fill ? `fill="${rect.fill}"` : 'fill="none"'}
+                ${rect.cornerRadius ? `rx="${rect.cornerRadius}" ry="${rect.cornerRadius}"` : ''}
+                ${rect.isDashed ? 'stroke-dasharray="10 10"' : ''}
+            />`;
+        });
 
         // Add lines
         lines.forEach((line) => {
