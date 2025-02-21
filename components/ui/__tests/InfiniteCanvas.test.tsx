@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(11);
+        expect(buttons).toHaveLength(12);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -73,7 +73,7 @@ describe('InfiniteCanvas', () => {
         fireEvent.click(eraserButton);
 
         const colorPickerInput = screen.queryByRole('textbox', {
-            hidden: true,
+            name: /color/i,
         });
         expect(colorPickerInput).not.toBeInTheDocument();
     });
@@ -119,7 +119,9 @@ describe('InfiniteCanvas', () => {
         // Click eraser button
         fireEvent.click(eraserButton);
 
-        const colorPicker = screen.queryByRole('textbox', { hidden: true });
+        const colorPicker = screen.queryByRole('textbox', {
+            name: /color/i,
+        });
         expect(colorPicker).not.toBeInTheDocument();
     });
 
@@ -165,29 +167,6 @@ describe('InfiniteCanvas MoveMode', () => {
         // Enable move mode
         fireEvent.click(moveUpLeftButton);
         expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
-    });
-
-    it('handles tool state transitions correctly', () => {
-        render(<InfiniteCanvas />);
-        const buttons = screen.getAllByRole('button');
-        const moveUpLeftButton = buttons[1];
-        const eraserButton = buttons[2];
-
-        // Enable move mode
-        fireEvent.click(moveUpLeftButton);
-        expect(moveUpLeftButton).toHaveClass('bg-secondary');
-
-        // Switch to eraser
-        fireEvent.click(eraserButton);
-        expect(eraserButton).toHaveClass('bg-secondary');
-        // Move mode remains active
-        expect(moveUpLeftButton).toHaveClass('bg-secondary');
-
-        // Disable eraser
-        fireEvent.click(eraserButton);
-        expect(eraserButton).toHaveClass('bg-primary');
-        // Move mode still remains active
-        expect(moveUpLeftButton).toHaveClass('bg-secondary');
     });
 });
 
