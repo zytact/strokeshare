@@ -49,24 +49,36 @@ const isPointNearText = (
     stage: Konva.Stage,
     eraserRadius: number,
 ) => {
-    // Find the text node in the stage
     const textNode = stage.findOne('#' + text.id) as Konva.Text;
     if (!textNode) return false;
 
-    // Get the text node's bounding box
+    // Get the absolute transformed bounding box
     const box = textNode.getClientRect();
 
+    // Convert the eraser point to the same coordinate space as the bounding box
+    const stageBox = stage.container().getBoundingClientRect();
+    const scale = stage.scaleX();
+    const point = {
+        x: px * scale + stage.x(),
+        y: py * scale + stage.y(),
+    };
+
+    // Adjust eraserRadius for stage scale
+    const scaledRadius = eraserRadius * scale;
+
     // Check if point is near the bounding box edges
-    const nearLeft = Math.abs(px - box.x) <= eraserRadius;
-    const nearRight = Math.abs(px - (box.x + box.width)) <= eraserRadius;
-    const nearTop = Math.abs(py - box.y) <= eraserRadius;
-    const nearBottom = Math.abs(py - (box.y + box.height)) <= eraserRadius;
+    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
+    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
+    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
+    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
 
     // Check if point is inside or near the box
     const insideX =
-        px >= box.x - eraserRadius && px <= box.x + box.width + eraserRadius;
+        point.x >= box.x - scaledRadius &&
+        point.x <= box.x + box.width + scaledRadius;
     const insideY =
-        py >= box.y - eraserRadius && px <= box.y + box.height + eraserRadius;
+        point.y >= box.y - scaledRadius &&
+        point.y <= box.y + box.height + scaledRadius;
 
     return (
         (insideX && (nearTop || nearBottom)) ||
@@ -290,11 +302,10 @@ export default function InfiniteCanvas() {
             y: (point.y - stagePos.y) / stageScale,
         };
 
-        // Only erase when actively erasing
         if (eraserMode && isErasing) {
             const eraserRadius = 40;
 
-            // Handle text erasing
+            // Handle text erasing with transformed coordinates
             const updatedTextElements = textElements.filter((text) => {
                 return !isPointNearText(
                     stagePoint.x,
