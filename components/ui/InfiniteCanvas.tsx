@@ -15,6 +15,7 @@ import {
     ZoomOut,
     Type,
     Minus as LineIcon,
+    ArrowRight,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -124,6 +125,7 @@ export default function InfiniteCanvas() {
     const [strokeWidth, setStrokeWidth] = useState(5);
     const [lineSegmentMode, setLineSegmentMode] = useState(false);
     const [lineStart, setLineStart] = useState<Point | null>(null);
+    const [arrowMode, setArrowMode] = useState(false);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -143,6 +145,7 @@ export default function InfiniteCanvas() {
         setEraserMode(false);
         setTextMode(false);
         setLineSegmentMode(false);
+        setArrowMode(false);
         resetTransformer();
     };
 
@@ -316,6 +319,40 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (evt.button === 0 && arrowMode) {
+            if (!lineStart) {
+                setLineStart(stagePoint);
+                const newLine = {
+                    points: [
+                        stagePoint.x,
+                        stagePoint.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                    color: currentColor,
+                    strokeWidth: strokeWidth,
+                    isArrow: true,
+                };
+                setLines([...lines, newLine]);
+            } else {
+                const lastLine = [...lines];
+                const lineIndex = lastLine.length - 1;
+                lastLine[lineIndex] = {
+                    ...lastLine[lineIndex],
+                    points: [
+                        lineStart.x,
+                        lineStart.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                };
+                setLines(lastLine);
+                setLineStart(null);
+                addToHistory(lastLine);
+            }
+            return;
+        }
+
         if (
             evt.button === 0 &&
             !dragModeEnabled &&
@@ -401,7 +438,7 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (lineSegmentMode && lineStart) {
+        if ((lineSegmentMode || arrowMode) && lineStart) {
             const lastLine = [...lines];
             lastLine[lastLine.length - 1].points = [
                 lineStart.x,
@@ -608,6 +645,40 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (arrowMode) {
+            if (!lineStart) {
+                setLineStart(stagePoint);
+                const newLine = {
+                    points: [
+                        stagePoint.x,
+                        stagePoint.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                    color: currentColor,
+                    strokeWidth: strokeWidth,
+                    isArrow: true,
+                };
+                setLines([...lines, newLine]);
+            } else {
+                const lastLine = [...lines];
+                const lineIndex = lastLine.length - 1;
+                lastLine[lineIndex] = {
+                    ...lastLine[lineIndex],
+                    points: [
+                        lineStart.x,
+                        lineStart.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                };
+                setLines(lastLine);
+                setLineStart(null);
+                addToHistory(lastLine);
+            }
+            return;
+        }
+
         if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
             setIsDrawing(true);
             setLines([
@@ -751,7 +822,7 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (lineSegmentMode && lineStart) {
+        if ((lineSegmentMode || arrowMode) && lineStart) {
             const lastLine = [...lines];
             lastLine[lastLine.length - 1].points = [
                 lineStart.x,
@@ -870,6 +941,33 @@ export default function InfiniteCanvas() {
         }
     }, [eraserMode]);
 
+    const drawArrowhead = (
+        context: Konva.Context,
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+    ) => {
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const length = 20; // Length of the arrow head
+
+        const arrowAngle = Math.PI / 6; // 30 degrees
+
+        // Calculate arrow head points
+        const x3 = x2 - length * Math.cos(angle - arrowAngle);
+        const y3 = y2 - length * Math.sin(angle - arrowAngle);
+        const x4 = x2 - length * Math.cos(angle + arrowAngle);
+        const y4 = y2 - length * Math.sin(angle + arrowAngle);
+
+        // Draw arrow head
+        context.beginPath();
+        context.moveTo(x2, y2);
+        context.lineTo(x3, y3);
+        context.moveTo(x2, y2);
+        context.lineTo(x4, y4);
+        context.stroke();
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -951,6 +1049,22 @@ export default function InfiniteCanvas() {
                         }}
                     >
                         <LineIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="arrow"
+                        variant={arrowMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (arrowMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setArrowMode(true);
+                            }
+                        }}
+                    >
+                        <ArrowRight className="h-4 w-4" />
                     </Button>
                 </div>
                 {!eraserMode && (
@@ -1153,6 +1267,28 @@ export default function InfiniteCanvas() {
                                     }
                                 }}
                                 onTransformEnd={(e) => handleTransformEnd(e, i)}
+                                sceneFunc={(context, shape) => {
+                                    context.beginPath();
+                                    context.moveTo(
+                                        line.points[0],
+                                        line.points[1],
+                                    );
+                                    context.lineTo(
+                                        line.points[2],
+                                        line.points[3],
+                                    );
+                                    context.strokeShape(shape);
+
+                                    if (line.isArrow) {
+                                        drawArrowhead(
+                                            context,
+                                            line.points[0],
+                                            line.points[1],
+                                            line.points[2],
+                                            line.points[3],
+                                        );
+                                    }
+                                }}
                             />
                         ))}
                         {textElements.map((text) => (
