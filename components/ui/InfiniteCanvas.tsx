@@ -883,6 +883,7 @@ export default function InfiniteCanvas() {
             </div>
             <textarea
                 ref={textareaRef}
+                aria-label="textarea"
                 style={{
                     color: currentColor,
                     lineHeight: '1.2',

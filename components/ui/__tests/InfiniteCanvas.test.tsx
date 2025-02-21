@@ -411,3 +411,90 @@ describe('StrokeWidth Component Responsiveness', () => {
         expect(strokeWidthButton).toBeVisible();
     });
 });
+
+describe('InfiniteCanvas Text Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles text mode when text button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const textButton = screen.getByRole('button', { name: /text/i });
+
+        // Click text button
+        fireEvent.click(textButton);
+        expect(textButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(textButton);
+        expect(textButton).toHaveClass('bg-primary');
+    });
+
+    it('shows textarea when clicking on canvas in text mode', () => {
+        render(<InfiniteCanvas />);
+        const textButton = screen.getByRole('button', { name: /text/i });
+        const canvas = screen.getByRole('presentation');
+
+        // Enable text mode
+        fireEvent.click(textButton);
+
+        // Click on canvas
+        fireEvent.click(canvas, { clientX: 100, clientY: 100 });
+
+        const textarea = screen.getByRole('textbox', {
+            name: /textarea/i,
+        });
+        expect(textarea).toBeInTheDocument();
+    });
+
+    it('adds text to canvas when pressing Enter', () => {
+        render(<InfiniteCanvas />);
+        const textButton = screen.getByRole('button', { name: /text/i });
+        const canvas = screen.getByRole('presentation');
+
+        // Enable text mode
+        fireEvent.click(textButton);
+
+        // Click on canvas
+        fireEvent.click(canvas, { clientX: 100, clientY: 100 });
+
+        const textarea = screen.getByRole('textbox', {
+            name: /textarea/i,
+        });
+        fireEvent.change(textarea, { target: { value: 'Test Text' } });
+        fireEvent.keyDown(textarea, { key: 'Enter' });
+
+        // Textarea should be hidden after pressing Enter
+        expect(textarea).toHaveStyle({ display: 'none' });
+    });
+
+    it('disables text mode when switching to other tools', () => {
+        render(<InfiniteCanvas />);
+        const textButton = screen.getByRole('button', { name: /text/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Enable text mode
+        fireEvent.click(textButton);
+        expect(textButton).toHaveClass('bg-secondary');
+
+        // Switch to eraser
+        fireEvent.click(eraserButton);
+        expect(textButton).toHaveClass('bg-primary');
+        expect(eraserButton).toHaveClass('bg-secondary');
+    });
+
+    it('maintains text color based on theme', () => {
+        render(<InfiniteCanvas />);
+        const textButton = screen.getByRole('button', { name: /text/i });
+        const canvas = screen.getByRole('presentation');
+
+        // Enable text mode
+        fireEvent.click(textButton);
+        fireEvent.click(canvas, { clientX: 100, clientY: 100 });
+
+        const textarea = screen.getByRole('textbox');
+        // In light theme (mocked), text should be black
+        expect(textarea).toHaveStyle({ color: '#000000' });
+    });
+});
