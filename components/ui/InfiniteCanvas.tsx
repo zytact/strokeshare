@@ -358,7 +358,8 @@ export default function InfiniteCanvas() {
             !dragModeEnabled &&
             !moveMode &&
             !eraserMode &&
-            !lineSegmentMode
+            !lineSegmentMode &&
+            !arrowMode
         ) {
             setIsDrawing(true);
             setLines([
@@ -1236,7 +1237,7 @@ export default function InfiniteCanvas() {
                                 points={line.points}
                                 stroke={line.color}
                                 strokeWidth={line.strokeWidth || strokeWidth}
-                                tension={0} // Set tension to 0 for straight lines
+                                tension={0.5} // Set tension for smooth free-drawing curves
                                 lineCap="round"
                                 lineJoin="round"
                                 globalCompositeOperation="source-over"
@@ -1269,17 +1270,42 @@ export default function InfiniteCanvas() {
                                 onTransformEnd={(e) => handleTransformEnd(e, i)}
                                 sceneFunc={(context, shape) => {
                                     context.beginPath();
-                                    context.moveTo(
-                                        line.points[0],
-                                        line.points[1],
-                                    );
-                                    context.lineTo(
-                                        line.points[2],
-                                        line.points[3],
-                                    );
+
+                                    // Check if it's a line segment/arrow (will have exactly 4 points) or free drawing
+                                    if (line.points.length === 4) {
+                                        // Draw straight line for line segments and arrows
+                                        context.moveTo(
+                                            line.points[0],
+                                            line.points[1],
+                                        );
+                                        context.lineTo(
+                                            line.points[2],
+                                            line.points[3],
+                                        );
+                                    } else {
+                                        // Draw curved line for free drawing
+                                        context.moveTo(
+                                            line.points[0],
+                                            line.points[1],
+                                        );
+                                        for (
+                                            let i = 2;
+                                            i < line.points.length;
+                                            i += 2
+                                        ) {
+                                            context.lineTo(
+                                                line.points[i],
+                                                line.points[i + 1],
+                                            );
+                                        }
+                                    }
+
                                     context.strokeShape(shape);
 
-                                    if (line.isArrow) {
+                                    if (
+                                        line.isArrow &&
+                                        line.points.length === 4
+                                    ) {
                                         drawArrowhead(
                                             context,
                                             line.points[0],
