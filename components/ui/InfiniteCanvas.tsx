@@ -1420,7 +1420,7 @@ export default function InfiniteCanvas() {
                         <div>
                             <Button className="p-2 backdrop-blur">
                                 <input
-                                    aria-label="color"
+                                    aria-label="draw-color"
                                     type="color"
                                     onChange={(e) =>
                                         setCurrentColor(e.target.value)

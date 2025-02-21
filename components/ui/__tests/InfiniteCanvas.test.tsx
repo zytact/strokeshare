@@ -98,9 +98,9 @@ describe('InfiniteCanvas', () => {
 
     it('changes color when color picker value changes', () => {
         render(<InfiniteCanvas />);
-        const colorPickerInput = screen.getByDisplayValue(
-            '#000000',
-        ) as HTMLInputElement;
+        const colorPickerInput = screen.getByRole('button', {
+            name: /draw-color/i,
+        }) as HTMLInputElement;
 
         fireEvent.change(colorPickerInput, { target: { value: '#ff0000' } });
         expect(colorPickerInput.value).toBe('#ff0000');
