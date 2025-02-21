@@ -903,6 +903,7 @@ export default function InfiniteCanvas() {
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
                         addToHistory(lines);
+                        disableAllModes(); // Add this line to disable all modes
                     }
                 }}
                 onBlur={() => {
