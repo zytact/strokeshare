@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Minus } from 'lucide-react';
+import { MoveHorizontal } from 'lucide-react';
 
 interface StrokeWidthProps {
     strokeWidth: number;
@@ -21,7 +21,7 @@ export function StrokeWidth({
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="default" className="flex items-center gap-2">
-                    <Minus className="h-4 w-4" />
+                    <MoveHorizontal className="h-4 w-4" />
                     <span className="hidden text-sm sm:block">
                         {strokeWidth}px
                     </span>
