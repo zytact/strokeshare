@@ -532,3 +532,67 @@ describe('InfiniteCanvas Arrow Mode', () => {
         expect(eraserButton).not.toHaveClass('bg-secondary');
     });
 });
+
+describe('InfiniteCanvas Dash Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles dash mode when dash button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const dashButton = screen.getByRole('button', { name: /dashed-line/i });
+
+        // Click dash button
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-primary');
+    });
+
+    it('maintains dash mode state across different drawing tools', () => {
+        render(<InfiniteCanvas />);
+        const dashButton = screen.getByRole('button', { name: /dashed-line/i });
+        const lineButton = screen.getByRole('button', {
+            name: /line-segment/i,
+        });
+        const arrowButton = screen.getByRole('button', { name: /arrow/i });
+
+        // Enable dash mode
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+
+        // Switch between line and arrow mode
+        fireEvent.click(lineButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+
+        fireEvent.click(arrowButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+    });
+
+    it('toggles dash property for selected line in move mode', () => {
+        render(<InfiniteCanvas />);
+        const moveButton = screen.getByRole('button', { name: /move/i });
+        const dashButton = screen.getByRole('button', { name: /dashed-line/i });
+        const canvas = screen.getByRole('presentation');
+
+        // Draw a line first
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 120, clientY: 120 });
+        fireEvent.mouseUp(canvas);
+
+        // Enable move mode and select the line
+        fireEvent.click(moveButton);
+        fireEvent.click(canvas);
+
+        // Toggle dash for selected line
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+
+        // Toggle dash off for selected line
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-primary');
+    });
+});

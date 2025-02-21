@@ -1053,7 +1053,7 @@ export default function InfiniteCanvas() {
                 </div>
                 <div>
                     <Button
-                        aria-label="line"
+                        aria-label="line-segment"
                         variant={lineSegmentMode ? 'secondary' : 'default'}
                         onClick={() => {
                             if (lineSegmentMode) {
