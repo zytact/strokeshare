@@ -19,3 +19,14 @@ interface TextElement {
     fill: string;
     id: string;
 }
+
+interface Rectangle {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: string;
+    strokeWidth?: number;
+    isDashed?: boolean;
+    cornerRadius?: number;
+}
