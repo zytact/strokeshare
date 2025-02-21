@@ -2,33 +2,49 @@ import { create } from 'zustand';
 
 interface CanvasState {
     lines: DrawLine[];
-    history: DrawLine[][];
+    textElements: TextElement[];
+    history: { lines: DrawLine[]; textElements: TextElement[] }[];
     currentStep: number;
     setLines: (lines: DrawLine[]) => void;
-    addToHistory: (lines: DrawLine[]) => void;
+    addToHistory: (lines: DrawLine[] | TextElement[]) => void;
     undo: () => void;
     redo: () => void;
     canUndo: () => boolean;
     canRedo: () => boolean;
+    setTextElements: (textElements: TextElement[]) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     lines: [],
-    history: [[]],
+    textElements: [],
+    history: [{ lines: [], textElements: [] }],
     currentStep: 0,
+
+    setTextElements: (textElements) => {
+        set({ textElements });
+    },
 
     setLines: (lines) => {
         set({ lines });
     },
 
-    addToHistory: (lines) => {
-        const { currentStep, history } = get();
+    addToHistory: (elements: DrawLine[] | TextElement[]) => {
+        const { currentStep, history, lines, textElements } = get();
         const newHistory = history.slice(0, currentStep + 1);
-        newHistory.push([...lines]);
+        const isDrawLines = elements[0] && 'points' in elements[0];
+        newHistory.push({
+            lines: isDrawLines ? [...(elements as DrawLine[])] : [...lines],
+            textElements: !isDrawLines
+                ? [...(elements as TextElement[])]
+                : [...textElements],
+        });
         set({
             history: newHistory,
             currentStep: currentStep + 1,
-            lines: lines,
+            lines: isDrawLines ? (elements as DrawLine[]) : lines,
+            textElements: !isDrawLines
+                ? (elements as TextElement[])
+                : textElements,
         });
     },
 
@@ -38,7 +54,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             const newStep = currentStep - 1;
             set({
                 currentStep: newStep,
-                lines: [...history[newStep]],
+                lines: [...history[newStep].lines],
+                textElements: [...history[newStep].textElements],
             });
         }
     },
@@ -49,7 +66,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             const newStep = currentStep + 1;
             set({
                 currentStep: newStep,
-                lines: [...history[newStep]],
+                lines: [...history[newStep].lines],
+                textElements: [...history[newStep].textElements],
             });
         }
     },

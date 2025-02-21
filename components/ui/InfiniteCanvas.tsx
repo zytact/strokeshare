@@ -1,5 +1,5 @@
 'use client';
-import { Stage, Layer, Line, Transformer } from 'react-konva';
+import { Stage, Layer, Line, Transformer, Text } from 'react-konva';
 import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
@@ -13,11 +13,67 @@ import {
     Undo2,
     ZoomIn,
     ZoomOut,
+    Type,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
 import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
+
+const getTextRotation = (textNode: Konva.Text) => {
+    // Get absolute rotation including all parent rotations
+    let rotation = textNode.rotation();
+    let parent = textNode.parent;
+    while (parent) {
+        rotation += parent.rotation();
+        parent = parent.parent;
+    }
+    return rotation;
+};
+
+const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
+    // Get absolute position
+    const absPos = textNode.absolutePosition();
+
+    // Convert to relative position considering stage transform
+    return {
+        x: (absPos.x - stage.x()) / stage.scaleX(),
+        y: (absPos.y - stage.y()) / stage.scaleY(),
+    };
+};
+
+// Add this helper function after the existing helper functions
+const isPointNearText = (
+    px: number,
+    py: number,
+    text: TextElement,
+    stage: Konva.Stage,
+    eraserRadius: number,
+) => {
+    // Find the text node in the stage
+    const textNode = stage.findOne('#' + text.id) as Konva.Text;
+    if (!textNode) return false;
+
+    // Get the text node's bounding box
+    const box = textNode.getClientRect();
+
+    // Check if point is near the bounding box edges
+    const nearLeft = Math.abs(px - box.x) <= eraserRadius;
+    const nearRight = Math.abs(px - (box.x + box.width)) <= eraserRadius;
+    const nearTop = Math.abs(py - box.y) <= eraserRadius;
+    const nearBottom = Math.abs(py - (box.y + box.height)) <= eraserRadius;
+
+    // Check if point is inside or near the box
+    const insideX =
+        px >= box.x - eraserRadius && px <= box.x + box.width + eraserRadius;
+    const insideY =
+        py >= box.y - eraserRadius && px <= box.y + box.height + eraserRadius;
+
+    return (
+        (insideX && (nearTop || nearBottom)) ||
+        (insideY && (nearLeft || nearRight))
+    );
+};
 
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
@@ -27,16 +83,32 @@ export default function InfiniteCanvas() {
     const [dragModeEnabled, setDragModeEnabled] = useState(false);
     const [eraserMode, setEraserMode] = useState(false);
     const [isErasing, setIsErasing] = useState(false);
+    const [textMode, setTextMode] = useState(false);
+    const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+    const [editingText, setEditingText] = useState<string | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
     );
 
-    const { lines, setLines, addToHistory, undo, redo, canUndo, canRedo } =
-        useCanvasStore();
+    const {
+        lines,
+        setLines,
+        textElements,
+        setTextElements,
+        addToHistory,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+    } = useCanvasStore();
 
-    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedShape, setSelectedShape] = useState<'line' | 'text' | null>(
+        null,
+    );
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(5);
 
@@ -49,6 +121,16 @@ export default function InfiniteCanvas() {
             transformer.getLayer()?.batchDraw();
         }
         setSelectedId(null);
+        setSelectedShape(null);
+    };
+
+    // Add this helper function after the state declarations
+    const disableAllModes = () => {
+        setDragModeEnabled(false);
+        setMoveMode(false);
+        setEraserMode(false);
+        setTextMode(false);
+        resetTransformer();
     };
 
     // Update the moveMode effect
@@ -59,15 +141,18 @@ export default function InfiniteCanvas() {
     }, [moveMode]);
 
     useEffect(() => {
-        if (moveMode) {
-            if (selectedId === null) {
-                return;
-            }
+        if (moveMode && selectedId && selectedShape) {
             const transformer = transformerRef.current;
             const stage = stageRef.current;
             if (!transformer || !stage) return;
 
-            const shape = stage.findOne('#line-' + selectedId);
+            let shape;
+            if (selectedShape === 'line') {
+                shape = stage.findOne('#line-' + selectedId);
+            } else if (selectedShape === 'text') {
+                shape = stage.findOne('#' + selectedId);
+            }
+
             if (shape) {
                 transformer.nodes([shape]);
                 transformer.getLayer()?.batchDraw();
@@ -75,7 +160,7 @@ export default function InfiniteCanvas() {
                 transformer.nodes([]);
             }
         }
-    }, [selectedId, moveMode]);
+    }, [selectedId, selectedShape, moveMode]);
 
     useEffect(() => {
         if (resolvedTheme) {
@@ -211,6 +296,23 @@ export default function InfiniteCanvas() {
         // Only erase when actively erasing
         if (eraserMode && isErasing) {
             const eraserRadius = 40;
+
+            // Handle text erasing
+            const updatedTextElements = textElements.filter((text) => {
+                return !isPointNearText(
+                    stagePoint.x,
+                    stagePoint.y,
+                    text,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
+            if (updatedTextElements.length !== textElements.length) {
+                setTextElements(updatedTextElements);
+            }
+
+            // Handle line erasing (existing code)
             const updatedLines = lines.filter((line) => {
                 let shouldKeepLine = true;
                 for (let i = 0; i < line.points.length - 2; i += 2) {
@@ -256,6 +358,8 @@ export default function InfiniteCanvas() {
         if (isErasing) {
             setIsErasing(false);
             addToHistory(lines);
+            // Add history update for text elements
+            addToHistory(textElements);
         }
     };
 
@@ -390,8 +494,73 @@ export default function InfiniteCanvas() {
                 },
             ]);
         }
+
+        if (textMode) {
+            const stage = e.target.getStage();
+            if (!stage) return;
+
+            const point = stage.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const newId = `text-${Date.now()}`;
+            const newText: TextElement = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                text: '',
+                fontSize: 30,
+                fill: currentColor,
+                id: newId,
+            };
+
+            setTextElements([...textElements, newText]);
+            setSelectedTextId(newId);
+            setEditingText('');
+
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            textarea.style.position = 'fixed';
+            textarea.style.top = `${point.y}px`;
+            textarea.style.left = `${point.x}px`;
+            textarea.style.display = 'block';
+            textarea.style.width = '80%';
+            textarea.style.height = 'auto';
+            textarea.focus();
+        }
     };
 
+    // Add this function right after handleTouchStart
+    const handleTextTap = (e: KonvaEventObject<TouchEvent>, textId: string) => {
+        const text = textElements.find((t) => t.id === textId);
+        if (!text) return;
+
+        setEditingText(text.text);
+        setSelectedTextId(textId);
+
+        const textarea = textareaRef.current;
+        const stage = e.target.getStage();
+        if (!textarea || !stage) return;
+
+        const textNode = stage.findOne(`#${textId}`) as Konva.Text;
+        const position = getTextPosition(textNode, stage);
+
+        // Position textarea for touch input
+        textarea.style.position = 'fixed';
+        textarea.style.top = `${position.y}px`;
+        textarea.style.left = `${position.x}px`;
+        textarea.style.display = 'block';
+        textarea.style.fontSize = `${text.fontSize}px`;
+        textarea.style.width = '80%'; // Use percentage for better mobile experience
+        textarea.style.height = 'auto';
+        textarea.focus();
+    };
+
+    // Modify the handleTouchMove function to include text erasing
     const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         const stage = e.target.getStage();
@@ -420,6 +589,23 @@ export default function InfiniteCanvas() {
 
         if (eraserMode) {
             const eraserRadius = 40;
+
+            // Handle text erasing
+            const updatedTextElements = textElements.filter((text) => {
+                return !isPointNearText(
+                    stagePoint.x,
+                    stagePoint.y,
+                    text,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
+            if (updatedTextElements.length !== textElements.length) {
+                setTextElements(updatedTextElements);
+            }
+
+            // Handle line erasing
             const updatedLines = lines.filter((line) => {
                 let shouldKeepLine = true;
                 for (let i = 0; i < line.points.length - 2; i += 2) {
@@ -454,6 +640,7 @@ export default function InfiniteCanvas() {
         setLines(lastLine);
     };
 
+    // Modify the handleTouchEnd function to include history updates for text
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         if (isDragging) {
@@ -461,22 +648,111 @@ export default function InfiniteCanvas() {
         }
         if (isDrawing) {
             setIsDrawing(false);
-            addToHistory(lines); // Add this line to update history
+            addToHistory(lines);
         }
         if (isErasing) {
             setIsErasing(false);
-            addToHistory(lines); // Add this line to update history
+            addToHistory(lines);
+            addToHistory(textElements);
         }
     };
 
+    // Update the handleStageClick function
+    const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
+        if (!textMode) return;
+
+        const stage = e.target.getStage();
+        if (!stage) return;
+
+        const point = stage.getPointerPosition();
+        if (!point) return;
+
+        const stagePoint = {
+            x: (point.x - stagePos.x) / stageScale,
+            y: (point.y - stagePos.y) / stageScale,
+        };
+
+        const newId = `text-${Date.now()}`;
+        const newText: TextElement = {
+            x: stagePoint.x,
+            y: stagePoint.y,
+            text: '',
+            fontSize: 30,
+            fill: currentColor,
+            id: newId,
+        };
+
+        setTextElements([...textElements, newText]);
+        setSelectedTextId(newId);
+        setEditingText('');
+
+        // Position and show the textarea
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.top = `${point.y}px`;
+        textarea.style.left = `${point.x}px`;
+        textarea.style.display = 'block';
+        textarea.style.width = `${window.innerWidth - point.x}px`; // Set exact width
+        textarea.style.height = `${window.innerHeight - point.y}px`; // Set exact height
+        textarea.focus();
+    };
+
+    // Handle text editing
+    const handleTextDblClick = (
+        e: KonvaEventObject<MouseEvent>,
+        textId: string,
+    ) => {
+        const text = textElements.find((t) => t.id === textId);
+        if (!text) return;
+
+        setEditingText(text.text);
+        setSelectedTextId(textId);
+
+        const textarea = textareaRef.current;
+        const stage = e.target.getStage();
+        if (!textarea || !stage) return;
+
+        const textNode = stage.findOne(`#${textId}`) as Konva.Text;
+        const position = getTextPosition(textNode, stage);
+        const rotation = getTextRotation(textNode);
+
+        // Apply the same transformations to textarea
+        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.top = `${position.y}px`;
+        textarea.style.left = `${position.x}px`;
+        textarea.style.display = 'block';
+        textarea.style.fontSize = `${text.fontSize}px`;
+        textarea.style.transform = `rotate(${rotation}deg)`;
+        textarea.style.transformOrigin = 'left top';
+        textarea.style.width = `${window.innerWidth - position.x}px`; // Set exact width
+        textarea.style.height = `${window.innerHeight - position.y}px`; // Set exact height
+        textarea.focus();
+    };
+
+    // Add this near your return statement
+    useEffect(() => {
+        if (eraserMode) {
+            setTextMode(false);
+        }
+    }, [eraserMode]);
+
     return (
         <>
-            <div className="fixed z-10 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
+            <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
                 <div>
                     <Button
                         aria-label="hand"
                         variant={dragModeEnabled ? 'secondary' : 'default'}
-                        onClick={() => setDragModeEnabled(!dragModeEnabled)}
+                        onClick={() => {
+                            if (dragModeEnabled) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setDragModeEnabled(true);
+                            }
+                        }}
                     >
                         <Hand className="h-4 w-4" />
                     </Button>
@@ -485,7 +761,14 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="move"
                         variant={moveMode ? 'secondary' : 'default'}
-                        onClick={() => setMoveMode(!moveMode)}
+                        onClick={() => {
+                            if (moveMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setMoveMode(true);
+                            }
+                        }}
                     >
                         <MoveUpLeft className="h-4 w-4" />
                     </Button>
@@ -495,11 +778,31 @@ export default function InfiniteCanvas() {
                         aria-label="eraser"
                         variant={eraserMode ? 'secondary' : 'default'}
                         onClick={() => {
-                            setEraserMode(!eraserMode);
-                            setDragModeEnabled(false);
+                            if (eraserMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setEraserMode(true);
+                            }
                         }}
                     >
                         <Eraser className="h-4 w-4" />{' '}
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="text"
+                        variant={textMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (textMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setTextMode(true);
+                            }
+                        }}
+                    >
+                        <Type className="h-4 w-4" />
                     </Button>
                 </div>
                 {!eraserMode && (
@@ -507,6 +810,7 @@ export default function InfiniteCanvas() {
                         <div>
                             <Button className="p-2 backdrop-blur">
                                 <input
+                                    aria-label="color"
                                     type="color"
                                     onChange={(e) =>
                                         setCurrentColor(e.target.value)
@@ -533,7 +837,7 @@ export default function InfiniteCanvas() {
                     />
                 </div>
             </div>
-            <div className="fixed bottom-4 left-4 z-10 flex gap-2">
+            <div className="fixed bottom-4 left-4 z-20 flex gap-2">
                 <Button
                     aria-label="undo"
                     variant="default"
@@ -577,6 +881,44 @@ export default function InfiniteCanvas() {
                     className="hidden sm:block"
                 />
             </div>
+            <textarea
+                ref={textareaRef}
+                aria-label="textarea"
+                style={{
+                    color: currentColor,
+                    lineHeight: '1.2',
+                }}
+                className="var(--background) fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 font-excalifont text-3xl outline-none"
+                onChange={(e) => setEditingText(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const updatedTexts = textElements.map((t) =>
+                            t.id === selectedTextId
+                                ? { ...t, text: editingText || '' }
+                                : t,
+                        );
+                        setTextElements(updatedTexts);
+                        setSelectedTextId(null);
+                        setEditingText(null);
+                        textareaRef.current!.style.display = 'none';
+                        addToHistory(lines);
+                    }
+                }}
+                onBlur={() => {
+                    const updatedTexts = textElements.map((t) =>
+                        t.id === selectedTextId
+                            ? { ...t, text: editingText || '' }
+                            : t,
+                    );
+                    setTextElements(updatedTexts);
+                    setSelectedTextId(null);
+                    setEditingText(null);
+                    textareaRef.current!.style.display = 'none';
+                    addToHistory(lines);
+                }}
+                value={editingText || ''}
+            />
             <div
                 data-testid="canvas-container"
                 style={{
@@ -604,8 +946,10 @@ export default function InfiniteCanvas() {
                                 e.target === e.target.getStage();
                             if (clickedOnEmpty) {
                                 setSelectedId(null);
+                                setSelectedShape(null);
                             }
                         }
+                        handleStageClick(e);
                     }}
                     ref={stageRef}
                     x={stagePos.x}
@@ -642,7 +986,8 @@ export default function InfiniteCanvas() {
                                             transformer.nodes([e.target]);
                                             transformer.getLayer()?.batchDraw();
                                         }
-                                        setSelectedId(i);
+                                        setSelectedId(String(i));
+                                        setSelectedShape('line');
                                     }
                                 }}
                                 onTouchStart={(e) => {
@@ -654,10 +999,80 @@ export default function InfiniteCanvas() {
                                             transformer.nodes([e.target]);
                                             transformer.getLayer()?.batchDraw();
                                         }
-                                        setSelectedId(i);
+                                        setSelectedId(String(i));
+                                        setSelectedShape('line');
                                     }
                                 }}
                                 onTransformEnd={(e) => handleTransformEnd(e, i)}
+                            />
+                        ))}
+                        {textElements.map((text) => (
+                            <Text
+                                key={text.id}
+                                id={text.id}
+                                x={text.x}
+                                y={text.y}
+                                text={text.text}
+                                fontSize={text.fontSize}
+                                fontFamily="Excalifont"
+                                fill={text.fill}
+                                draggable={moveMode}
+                                onDblClick={(e) =>
+                                    handleTextDblClick(e, text.id)
+                                }
+                                onDblTap={(e: KonvaEventObject<TouchEvent>) =>
+                                    handleTextTap(e, text.id)
+                                }
+                                onClick={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(text.id);
+                                        setSelectedShape('text');
+                                    }
+                                }}
+                                onTap={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(text.id);
+                                        setSelectedShape('text');
+                                    }
+                                }}
+                                onTransform={(e) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+
+                                    // Update the text element with new position and scale
+                                    const updatedTexts = textElements.map(
+                                        (t) =>
+                                            t.id === text.id
+                                                ? {
+                                                      ...t,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                      fontSize:
+                                                          text.fontSize *
+                                                          scaleX,
+                                                  }
+                                                : t,
+                                    );
+                                    setTextElements(updatedTexts);
+
+                                    // Reset scale after applying fontSize
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+                                }}
                             />
                         ))}
                         {moveMode && (

@@ -37,7 +37,7 @@ export function DownloadPop({
     const { exportWithBackground, setExportWithBackground } =
         useDownloadPopStore();
 
-    const { lines } = useCanvasStore();
+    const { lines, textElements } = useCanvasStore();
 
     const handlePNG = () => {
         if (!stageRef.current) return;
@@ -111,6 +111,7 @@ export function DownloadPop({
 
         svg += `<g transform="translate(${stagePos.x},${stagePos.y}) scale(${stageScale})">`;
 
+        // Add lines
         lines.forEach((line) => {
             const points = line.points;
             if (points.length >= 4) {
@@ -120,6 +121,26 @@ export function DownloadPop({
                 }
                 svg += `<path d="${pathData}" stroke="${line.color}" stroke-width="${line.strokeWidth || strokeWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
             }
+        });
+
+        // Add text elements
+        textElements.forEach((text) => {
+            const textColor = resolvedTheme === 'dark' ? '#ffffff' : '#000000';
+            const escapedContent = text.text
+                ? text.text
+                      .replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&apos;')
+                : '';
+
+            svg += `<text x="${text.x || 0}" y="${text.y || 0}" 
+                fill="${textColor}" 
+                font-family="system-ui, sans-serif" 
+                font-size="${text.fontSize || 16}px"
+                text-anchor="start"
+                dominant-baseline="hanging">${escapedContent}</text>`;
         });
 
         svg += '</g></svg>';
