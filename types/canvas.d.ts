@@ -7,7 +7,8 @@ interface DrawLine {
     points: number[];
     color: string;
     strokeWidth?: number;
-    isArrow?: boolean; // Add this line
+    isArrow?: boolean;
+    isDashed?: boolean;
 }
 
 interface TextElement {
