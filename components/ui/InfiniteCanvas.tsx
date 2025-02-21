@@ -16,6 +16,7 @@ import {
     Type,
     Minus as LineIcon,
     ArrowRight,
+    SquareDashed,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -126,6 +127,7 @@ export default function InfiniteCanvas() {
     const [lineSegmentMode, setLineSegmentMode] = useState(false);
     const [lineStart, setLineStart] = useState<Point | null>(null);
     const [arrowMode, setArrowMode] = useState(false);
+    const [dashedMode, setDashedMode] = useState(false);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -282,6 +284,7 @@ export default function InfiniteCanvas() {
                     ],
                     color: currentColor,
                     strokeWidth: strokeWidth,
+                    isDashed: dashedMode,
                 };
                 setLines([...lines, newLine]);
             } else {
@@ -332,6 +335,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     strokeWidth: strokeWidth,
                     isArrow: true,
+                    isDashed: dashedMode,
                 };
                 setLines([...lines, newLine]);
             } else {
@@ -368,6 +372,7 @@ export default function InfiniteCanvas() {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
                     strokeWidth: strokeWidth,
+                    isDashed: dashedMode,
                 },
             ]);
         }
@@ -612,6 +617,7 @@ export default function InfiniteCanvas() {
                     ],
                     color: currentColor,
                     strokeWidth: strokeWidth,
+                    isDashed: dashedMode,
                 };
                 setLines([...lines, newLine]);
             } else {
@@ -659,6 +665,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     strokeWidth: strokeWidth,
                     isArrow: true,
+                    isDashed: dashedMode,
                 };
                 setLines([...lines, newLine]);
             } else {
@@ -688,6 +695,7 @@ export default function InfiniteCanvas() {
                     points: [stagePoint.x, stagePoint.y],
                     color: currentColor,
                     strokeWidth: strokeWidth,
+                    isDashed: dashedMode,
                 },
             ]);
         }
@@ -969,6 +977,13 @@ export default function InfiniteCanvas() {
         context.stroke();
     };
 
+    const getSelectedLine = () => {
+        if (selectedId && selectedShape === 'line') {
+            return lines[parseInt(selectedId)];
+        }
+        return null;
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1038,7 +1053,7 @@ export default function InfiniteCanvas() {
                 </div>
                 <div>
                     <Button
-                        aria-label="line"
+                        aria-label="line-segment"
                         variant={lineSegmentMode ? 'secondary' : 'default'}
                         onClick={() => {
                             if (lineSegmentMode) {
@@ -1066,6 +1081,40 @@ export default function InfiniteCanvas() {
                         }}
                     >
                         <ArrowRight className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="dashed-line"
+                        variant={
+                            moveMode && getSelectedLine()?.isDashed
+                                ? 'secondary'
+                                : dashedMode
+                                  ? 'secondary'
+                                  : 'default'
+                        }
+                        onClick={() => {
+                            if (
+                                moveMode &&
+                                selectedId &&
+                                selectedShape === 'line'
+                            ) {
+                                // Toggle dash for selected line
+                                const newLines = [...lines];
+                                const lineIndex = parseInt(selectedId);
+                                newLines[lineIndex] = {
+                                    ...newLines[lineIndex],
+                                    isDashed: !newLines[lineIndex].isDashed,
+                                };
+                                setLines(newLines);
+                                addToHistory(newLines);
+                            } else {
+                                // Toggle global dash mode
+                                setDashedMode(!dashedMode);
+                            }
+                        }}
+                    >
+                        <SquareDashed className="h-4 w-4" />
                     </Button>
                 </div>
                 {!eraserMode && (
@@ -1241,6 +1290,7 @@ export default function InfiniteCanvas() {
                                 lineCap="round"
                                 lineJoin="round"
                                 globalCompositeOperation="source-over"
+                                dash={line.isDashed ? [10, 10] : undefined}
                                 onClick={(e) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
