@@ -557,13 +557,59 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!dragModeEnabled && !moveMode) {
-            setIsDrawing(true);
-            const stagePoint = {
-                x: (point.x - stagePos.x) / stageScale,
-                y: (point.y - stagePos.y) / stageScale,
-            };
+        const stagePoint = {
+            x: (point.x - stagePos.x) / stageScale,
+            y: (point.y - stagePos.y) / stageScale,
+        };
 
+        if (lineSegmentMode) {
+            if (!lineStart) {
+                setLineStart(stagePoint);
+                const newLine = {
+                    points: [
+                        stagePoint.x,
+                        stagePoint.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                    color: currentColor,
+                    strokeWidth: strokeWidth,
+                };
+                setLines([...lines, newLine]);
+            } else {
+                const lastLine = [...lines];
+                const lineIndex = lastLine.length - 1;
+                lastLine[lineIndex] = {
+                    ...lastLine[lineIndex],
+                    points: [
+                        lineStart.x,
+                        lineStart.y,
+                        stagePoint.x,
+                        stagePoint.y,
+                    ],
+                };
+                setLines(lastLine);
+                setLineStart(null);
+                addToHistory(lastLine);
+
+                // Select the line for transformation if in move mode
+                if (moveMode) {
+                    if (stage) {
+                        const line = stage.findOne('#line-' + lineIndex);
+                        if (line && transformerRef.current) {
+                            transformerRef.current.nodes([line]);
+                            transformerRef.current.getLayer()?.batchDraw();
+                            setSelectedId(String(lineIndex));
+                            setSelectedShape('line');
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
+            setIsDrawing(true);
             setLines([
                 ...lines,
                 {
