@@ -888,7 +888,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     lineHeight: '1.2',
                 }}
-                className="var(--background) fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 font-excalifont text-3xl outline-none"
+                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont text-3xl outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1018,6 +1018,7 @@ export default function InfiniteCanvas() {
                                 fontFamily="Excalifont"
                                 fill={text.fill}
                                 draggable={moveMode}
+                                visible={selectedTextId !== text.id}
                                 onDblClick={(e) =>
                                     handleTextDblClick(e, text.id)
                                 }
