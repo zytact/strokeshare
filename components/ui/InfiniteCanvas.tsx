@@ -42,7 +42,6 @@ const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
     };
 };
 
-// Add this helper function after the existing helper functions
 const isPointNearText = (
     px: number,
     py: number,
@@ -50,24 +49,35 @@ const isPointNearText = (
     stage: Konva.Stage,
     eraserRadius: number,
 ) => {
-    // Find the text node in the stage
     const textNode = stage.findOne('#' + text.id) as Konva.Text;
     if (!textNode) return false;
 
-    // Get the text node's bounding box
+    // Get the absolute transformed bounding box
     const box = textNode.getClientRect();
 
+    // Convert the eraser point to the same coordinate space as the bounding box
+    const scale = stage.scaleX();
+    const point = {
+        x: px * scale + stage.x(),
+        y: py * scale + stage.y(),
+    };
+
+    // Adjust eraserRadius for stage scale
+    const scaledRadius = eraserRadius * scale;
+
     // Check if point is near the bounding box edges
-    const nearLeft = Math.abs(px - box.x) <= eraserRadius;
-    const nearRight = Math.abs(px - (box.x + box.width)) <= eraserRadius;
-    const nearTop = Math.abs(py - box.y) <= eraserRadius;
-    const nearBottom = Math.abs(py - (box.y + box.height)) <= eraserRadius;
+    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
+    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
+    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
+    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
 
     // Check if point is inside or near the box
     const insideX =
-        px >= box.x - eraserRadius && px <= box.x + box.width + eraserRadius;
+        point.x >= box.x - scaledRadius &&
+        point.x <= box.x + box.width + scaledRadius;
     const insideY =
-        py >= box.y - eraserRadius && px <= box.y + box.height + eraserRadius;
+        point.y >= box.y - scaledRadius &&
+        point.y <= box.y + box.height + scaledRadius;
 
     return (
         (insideX && (nearTop || nearBottom)) ||
@@ -124,7 +134,6 @@ export default function InfiniteCanvas() {
         setSelectedShape(null);
     };
 
-    // Add this helper function after the state declarations
     const disableAllModes = () => {
         setDragModeEnabled(false);
         setMoveMode(false);
@@ -244,7 +253,6 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        // Add this condition for eraser
         if (evt.button === 0 && eraserMode) {
             setIsErasing(true);
             return;
@@ -293,11 +301,10 @@ export default function InfiniteCanvas() {
             y: (point.y - stagePos.y) / stageScale,
         };
 
-        // Only erase when actively erasing
         if (eraserMode && isErasing) {
             const eraserRadius = 40;
 
-            // Handle text erasing
+            // Handle text erasing with transformed coordinates
             const updatedTextElements = textElements.filter((text) => {
                 return !isPointNearText(
                     stagePoint.x,
@@ -534,7 +541,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Add this function right after handleTouchStart
     const handleTextTap = (e: KonvaEventObject<TouchEvent>, textId: string) => {
         const text = textElements.find((t) => t.id === textId);
         if (!text) return;
@@ -560,7 +566,6 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
-    // Modify the handleTouchMove function to include text erasing
     const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         const stage = e.target.getStage();
@@ -640,7 +645,6 @@ export default function InfiniteCanvas() {
         setLines(lastLine);
     };
 
-    // Modify the handleTouchEnd function to include history updates for text
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         if (isDragging) {
@@ -657,7 +661,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Update the handleStageClick function
     const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
         if (!textMode) return;
 
@@ -690,7 +693,7 @@ export default function InfiniteCanvas() {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
-        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.position = 'fixed';
         textarea.style.top = `${point.y}px`;
         textarea.style.left = `${point.x}px`;
         textarea.style.display = 'block';
@@ -719,7 +722,7 @@ export default function InfiniteCanvas() {
         const rotation = getTextRotation(textNode);
 
         // Apply the same transformations to textarea
-        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.position = 'fixed';
         textarea.style.top = `${position.y}px`;
         textarea.style.left = `${position.x}px`;
         textarea.style.display = 'block';
@@ -731,7 +734,6 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
-    // Add this near your return statement
     useEffect(() => {
         if (eraserMode) {
             setTextMode(false);
@@ -888,7 +890,7 @@ export default function InfiniteCanvas() {
                     color: currentColor,
                     lineHeight: '1.2',
                 }}
-                className="var(--background) fixed z-10 m-0 hidden resize-none overflow-hidden border-none p-0 font-excalifont text-3xl outline-none"
+                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont text-3xl outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -903,6 +905,7 @@ export default function InfiniteCanvas() {
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
                         addToHistory(lines);
+                        disableAllModes();
                     }
                 }}
                 onBlur={() => {
@@ -1017,6 +1020,7 @@ export default function InfiniteCanvas() {
                                 fontFamily="Excalifont"
                                 fill={text.fill}
                                 draggable={moveMode}
+                                visible={selectedTextId !== text.id}
                                 onDblClick={(e) =>
                                     handleTextDblClick(e, text.id)
                                 }
