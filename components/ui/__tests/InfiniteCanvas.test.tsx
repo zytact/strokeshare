@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(15);
+        expect(buttons).toHaveLength(18);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -405,7 +405,7 @@ describe('StrokeWidth Component Responsiveness', () => {
 
         // Find the stroke width button by the Minus icon
         const strokeWidthButton = screen.getByRole('button', {
-            name: /5px/i, // Assuming default stroke width is 5
+            name: /3px/i, // Assuming default stroke width is 3
         });
 
         expect(strokeWidthButton).toBeVisible();

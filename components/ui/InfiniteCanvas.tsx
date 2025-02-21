@@ -180,8 +180,6 @@ export default function InfiniteCanvas() {
     const [dashedMode, setDashedMode] = useState(false);
     const [rectangleMode, setRectangleMode] = useState(false);
     const [startPoint, setStartPoint] = useState<Point | null>(null);
-    const [fillMode, setFillMode] = useState(false);
-    const [strokeColorMode, setStrokeColorMode] = useState(false); // Add new state for stroke color mode
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -1342,7 +1340,6 @@ export default function InfiniteCanvas() {
                 <div className="relative">
                     <Button
                         aria-label="fill"
-                        variant={fillMode ? 'secondary' : 'default'}
                         className="relative"
                         disabled={!moveMode || selectedShape !== 'rectangle'}
                     >
@@ -1376,7 +1373,6 @@ export default function InfiniteCanvas() {
                 <div className="relative">
                     <Button
                         aria-label="stroke-color"
-                        variant={strokeColorMode ? 'secondary' : 'default'}
                         className="relative"
                         disabled={!moveMode || !selectedShape}
                     >
