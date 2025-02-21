@@ -265,7 +265,7 @@ describe('InfiniteCanvas Undo/Redo', () => {
         // Test Ctrl/Cmd + Z for undo
         fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
 
-        // Test Ctrl/Cmd + Shift + Z for redo
+        // Test Ctrl/Cmd + Y for redo
         fireEvent.keyDown(document, {
             key: 'y',
             ctrlKey: true,

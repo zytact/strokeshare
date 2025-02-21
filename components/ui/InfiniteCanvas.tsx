@@ -42,7 +42,6 @@ const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
     };
 };
 
-// Add this helper function after the existing helper functions
 const isPointNearText = (
     px: number,
     py: number,
@@ -124,7 +123,6 @@ export default function InfiniteCanvas() {
         setSelectedShape(null);
     };
 
-    // Add this helper function after the state declarations
     const disableAllModes = () => {
         setDragModeEnabled(false);
         setMoveMode(false);
@@ -244,7 +242,6 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        // Add this condition for eraser
         if (evt.button === 0 && eraserMode) {
             setIsErasing(true);
             return;
@@ -534,7 +531,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Add this function right after handleTouchStart
     const handleTextTap = (e: KonvaEventObject<TouchEvent>, textId: string) => {
         const text = textElements.find((t) => t.id === textId);
         if (!text) return;
@@ -560,7 +556,6 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
-    // Modify the handleTouchMove function to include text erasing
     const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         const stage = e.target.getStage();
@@ -640,7 +635,6 @@ export default function InfiniteCanvas() {
         setLines(lastLine);
     };
 
-    // Modify the handleTouchEnd function to include history updates for text
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
         if (isDragging) {
@@ -657,7 +651,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Update the handleStageClick function
     const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
         if (!textMode) return;
 
@@ -690,7 +683,7 @@ export default function InfiniteCanvas() {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
-        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.position = 'fixed';
         textarea.style.top = `${point.y}px`;
         textarea.style.left = `${point.x}px`;
         textarea.style.display = 'block';
@@ -719,7 +712,7 @@ export default function InfiniteCanvas() {
         const rotation = getTextRotation(textNode);
 
         // Apply the same transformations to textarea
-        textarea.style.position = 'fixed'; // Changed to fixed
+        textarea.style.position = 'fixed';
         textarea.style.top = `${position.y}px`;
         textarea.style.left = `${position.x}px`;
         textarea.style.display = 'block';
@@ -731,7 +724,6 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
-    // Add this near your return statement
     useEffect(() => {
         if (eraserMode) {
             setTextMode(false);
@@ -903,7 +895,7 @@ export default function InfiniteCanvas() {
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
                         addToHistory(lines);
-                        disableAllModes(); // Add this line to disable all modes
+                        disableAllModes();
                     }
                 }}
                 onBlur={() => {
