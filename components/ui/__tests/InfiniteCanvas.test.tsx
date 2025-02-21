@@ -596,3 +596,56 @@ describe('InfiniteCanvas Dash Mode', () => {
         expect(dashButton).toHaveClass('bg-primary');
     });
 });
+
+describe('InfiniteCanvas Rectangle Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles rectangle mode when rectangle button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const rectangleButton = screen.getByRole('button', {
+            name: /rectangle/i,
+        });
+
+        // Click rectangle button
+        fireEvent.click(rectangleButton);
+        expect(rectangleButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(rectangleButton);
+        expect(rectangleButton).toHaveClass('bg-primary');
+    });
+
+    it('disables other modes when rectangle mode is enabled', () => {
+        render(<InfiniteCanvas />);
+        const rectangleButton = screen.getByRole('button', {
+            name: /rectangle/i,
+        });
+        const handButton = screen.getByRole('button', { name: /hand/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Enable rectangle mode
+        fireEvent.click(rectangleButton);
+
+        // Other buttons should not be in secondary mode
+        expect(handButton).not.toHaveClass('bg-secondary');
+        expect(eraserButton).not.toHaveClass('bg-secondary');
+    });
+
+    it('disables fill color button when no rectangle is selected', () => {
+        render(<InfiniteCanvas />);
+        const moveButton = screen.getByRole('button', { name: /move/i });
+
+        // Enable move mode without selecting any rectangle
+        fireEvent.click(moveButton);
+
+        // Fill button should be disabled
+        const fillButton = screen.getByRole('button', { name: /fill/i });
+        const fillInput = fillButton.querySelector('input[type="color"]');
+
+        expect(fillButton).toBeDisabled();
+        expect(fillInput).toBeDisabled();
+    });
+});
