@@ -56,7 +56,6 @@ const isPointNearText = (
     const box = textNode.getClientRect();
 
     // Convert the eraser point to the same coordinate space as the bounding box
-    const stageBox = stage.container().getBoundingClientRect();
     const scale = stage.scaleX();
     const point = {
         x: px * scale + stage.x(),
