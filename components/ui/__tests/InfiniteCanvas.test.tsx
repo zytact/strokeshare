@@ -47,7 +47,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(13);
+        expect(buttons).toHaveLength(14);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -496,5 +496,39 @@ describe('InfiniteCanvas Text Mode', () => {
         const textarea = screen.getByRole('textbox');
         // In light theme (mocked), text should be black
         expect(textarea).toHaveStyle({ color: '#000000' });
+    });
+});
+
+describe('InfiniteCanvas Arrow Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles arrow mode when arrow button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const arrowButton = screen.getByRole('button', { name: /arrow/i });
+
+        // Click arrow button
+        fireEvent.click(arrowButton);
+        expect(arrowButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(arrowButton);
+        expect(arrowButton).toHaveClass('bg-primary');
+    });
+
+    it('disables other modes when arrow mode is enabled', () => {
+        render(<InfiniteCanvas />);
+        const arrowButton = screen.getByRole('button', { name: /arrow/i });
+        const handButton = screen.getByRole('button', { name: /hand/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Enable arrow mode
+        fireEvent.click(arrowButton);
+
+        // Other buttons should not be in secondary mode
+        expect(handButton).not.toHaveClass('bg-secondary');
+        expect(eraserButton).not.toHaveClass('bg-secondary');
     });
 });
