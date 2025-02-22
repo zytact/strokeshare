@@ -19,7 +19,7 @@ import {
     SquareDashed,
     Square,
     PaintBucket,
-    Brush, // Add Brush import
+    Palette,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -1412,7 +1412,7 @@ export default function InfiniteCanvas() {
                             className="absolute inset-0 cursor-pointer opacity-0"
                             disabled={!moveMode || !selectedShape}
                         />
-                        <Brush className="h-4 w-4" />
+                        <Palette className="h-4 w-4" />
                     </Button>
                 </div>
                 {!eraserMode && (
