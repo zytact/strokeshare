@@ -1703,7 +1703,7 @@ export default function InfiniteCanvas() {
                                 key={`rect-${i}`}
                                 id={`rect-${i}`}
                                 {...rect}
-                                cornerRadius={rect.cornerRadius} // Add this line
+                                cornerRadius={rect.cornerRadius}
                                 stroke={rect.color}
                                 strokeWidth={rect.strokeWidth}
                                 dash={rect.isDashed ? [10, 10] : undefined}
@@ -1740,20 +1740,45 @@ export default function InfiniteCanvas() {
                                     const scaleX = node.scaleX();
                                     const scaleY = node.scaleY();
 
+                                    // Reset scale
                                     node.scaleX(1);
                                     node.scaleY(1);
 
-                                    const newRectangles = [...rectangles];
-                                    newRectangles[i] = {
-                                        ...newRectangles[i],
-                                        x: node.x(),
-                                        y: node.y(),
-                                        width: node.width() * scaleX,
-                                        height: node.height() * scaleY,
-                                    };
+                                    const newRectangles = rectangles.map(
+                                        (r, index) =>
+                                            index === i
+                                                ? {
+                                                      ...r,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                      width:
+                                                          node.width() * scaleX,
+                                                      height:
+                                                          node.height() *
+                                                          scaleY,
+                                                  }
+                                                : r,
+                                    );
 
                                     setRectangles(newRectangles);
                                     addToHistory(newRectangles);
+                                }}
+                                onDragMove={(e) => {
+                                    const node = e.target;
+                                    const updatedRectangles = rectangles.map(
+                                        (r, index) =>
+                                            index === i
+                                                ? {
+                                                      ...r,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                  }
+                                                : r,
+                                    );
+                                    setRectangles(updatedRectangles);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(rectangles);
                                 }}
                             />
                         ))}
