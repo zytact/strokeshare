@@ -1556,30 +1556,50 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="fill"
                         className="relative"
-                        disabled={!moveMode || selectedShape !== 'rectangle'}
+                        disabled={
+                            !moveMode ||
+                            (selectedShape !== 'rectangle' &&
+                                selectedShape !== 'circle')
+                        }
                     >
                         <input
                             type="color"
                             onChange={(e) => {
                                 const newColor = e.target.value;
-                                if (
-                                    moveMode &&
-                                    selectedId &&
-                                    selectedShape === 'rectangle'
-                                ) {
-                                    const newRectangles = [...rectangles];
-                                    const rectIndex = parseInt(selectedId);
-                                    newRectangles[rectIndex] = {
-                                        ...newRectangles[rectIndex],
-                                        fill: newColor,
-                                    };
-                                    setRectangles(newRectangles);
-                                    addToHistory(newRectangles);
+                                if (moveMode && selectedId && selectedShape) {
+                                    switch (selectedShape) {
+                                        case 'rectangle':
+                                            const newRectangles = [
+                                                ...rectangles,
+                                            ];
+                                            const rectIndex =
+                                                parseInt(selectedId);
+                                            newRectangles[rectIndex] = {
+                                                ...newRectangles[rectIndex],
+                                                fill: newColor,
+                                            };
+                                            setRectangles(newRectangles);
+                                            addToHistory(newRectangles);
+                                            break;
+                                        case 'circle':
+                                            const newCircles = [...circles];
+                                            const circleIndex =
+                                                parseInt(selectedId);
+                                            newCircles[circleIndex] = {
+                                                ...newCircles[circleIndex],
+                                                fill: newColor,
+                                            };
+                                            setCircles(newCircles);
+                                            addToHistory(newCircles);
+                                            break;
+                                    }
                                 }
                             }}
                             className="absolute inset-0 cursor-pointer opacity-0"
                             disabled={
-                                !moveMode || selectedShape !== 'rectangle'
+                                !moveMode ||
+                                (selectedShape !== 'rectangle' &&
+                                    selectedShape !== 'circle')
                             }
                         />
                         <PaintBucket className="h-4 w-4" />
@@ -1620,6 +1640,17 @@ export default function InfiniteCanvas() {
                                             };
                                             setRectangles(newRectangles);
                                             addToHistory(newRectangles);
+                                            break;
+                                        case 'circle':
+                                            const newCircles = [...circles];
+                                            const circleIndex =
+                                                parseInt(selectedId);
+                                            newCircles[circleIndex] = {
+                                                ...newCircles[circleIndex],
+                                                color: newColor,
+                                            };
+                                            setCircles(newCircles);
+                                            addToHistory(newCircles);
                                             break;
                                     }
                                 }
