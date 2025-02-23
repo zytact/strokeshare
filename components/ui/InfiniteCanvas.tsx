@@ -771,12 +771,14 @@ export default function InfiniteCanvas() {
         }
         if (isErasing) {
             setIsErasing(false);
-            addToHistory(lines);
-            // Add history update for text elements
-            addToHistory(textElements);
-            addToHistory(rectangles);
-            addToHistory(circles);
-            addToHistory(images);
+            const currentState = {
+                lines,
+                textElements,
+                rectangles,
+                circles,
+                images,
+            };
+            addToHistory(currentState);
         }
         if (rectangleMode && startPoint) {
             setStartPoint(null);

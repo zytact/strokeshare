@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 
+interface ConsolidatedState {
+    lines: DrawLine[];
+    textElements: TextElement[];
+    rectangles: Rectangle[];
+    circles: Circle[];
+    images: Image[];
+}
 interface CanvasState {
     lines: DrawLine[];
     textElements: TextElement[];
@@ -16,7 +23,13 @@ interface CanvasState {
     currentStep: number;
     setLines: (lines: DrawLine[]) => void;
     addToHistory: (
-        lines: DrawLine[] | TextElement[] | Rectangle[] | Circle[] | Image[],
+        elements:
+            | DrawLine[]
+            | TextElement[]
+            | Rectangle[]
+            | Circle[]
+            | Image[]
+            | ConsolidatedState,
     ) => void;
     undo: () => void;
     redo: () => void;
@@ -66,7 +79,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     },
 
     addToHistory: (
-        elements: DrawLine[] | TextElement[] | Rectangle[] | Circle[] | Image[],
+        elements:
+            | DrawLine[]
+            | TextElement[]
+            | Rectangle[]
+            | Circle[]
+            | Image[]
+            | ConsolidatedState,
     ) => {
         const {
             currentStep,
@@ -78,6 +97,31 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             images,
         } = get();
         const newHistory = history.slice(0, currentStep + 1);
+        if (
+            typeof elements === 'object' &&
+            'lines' in elements &&
+            'textElements' in elements
+        ) {
+            const consolidatedState = elements as ConsolidatedState;
+            newHistory.push({
+                lines: [...consolidatedState.lines],
+                textElements: [...consolidatedState.textElements],
+                rectangles: [...consolidatedState.rectangles],
+                circles: [...consolidatedState.circles],
+                images: [...consolidatedState.images],
+            });
+
+            set({
+                history: newHistory,
+                currentStep: currentStep + 1,
+                lines: [...consolidatedState.lines],
+                textElements: [...consolidatedState.textElements],
+                rectangles: [...consolidatedState.rectangles],
+                circles: [...consolidatedState.circles],
+                images: [...consolidatedState.images],
+            });
+            return;
+        }
         const isDrawLines = elements[0] && 'points' in elements[0];
         const isRectangles =
             elements[0] && 'width' in elements[0] && !('src' in elements[0]);
