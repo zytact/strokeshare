@@ -1661,6 +1661,41 @@ export default function InfiniteCanvas() {
                                         );
                                     }
                                 }}
+                                onDragEnd={(e) => {
+                                    const node = e.target;
+                                    const lineIndex = parseInt(
+                                        node.id().split('-')[1],
+                                    );
+
+                                    // Get the current position of the line
+                                    const dx = node.x();
+                                    const dy = node.y();
+
+                                    // Update the points array with the new position
+                                    const newLines = [...lines];
+                                    const points = [
+                                        ...newLines[lineIndex].points,
+                                    ];
+
+                                    // Update each point's position
+                                    for (let i = 0; i < points.length; i += 2) {
+                                        points[i] += dx;
+                                        points[i + 1] += dy;
+                                    }
+
+                                    // Update the line with new points
+                                    newLines[lineIndex] = {
+                                        ...newLines[lineIndex],
+                                        points: points,
+                                    };
+
+                                    // Reset the node position since we've updated the points
+                                    node.x(0);
+                                    node.y(0);
+
+                                    setLines(newLines);
+                                    addToHistory(newLines);
+                                }}
                             />
                         ))}
                         {rectangles.map((rect, i) => (
@@ -1789,6 +1824,23 @@ export default function InfiniteCanvas() {
                                     // Reset scale after applying fontSize
                                     node.scaleX(1);
                                     node.scaleY(1);
+                                }}
+                                onDragMove={(e) => {
+                                    const node = e.target;
+                                    const updatedTexts = textElements.map(
+                                        (t) =>
+                                            t.id === text.id
+                                                ? {
+                                                      ...t,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                  }
+                                                : t,
+                                    );
+                                    setTextElements(updatedTexts);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(textElements);
                                 }}
                             />
                         ))}
