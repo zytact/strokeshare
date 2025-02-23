@@ -1368,7 +1368,7 @@ export default function InfiniteCanvas() {
                     const rectIndex = parseInt(selectedId);
                     newRectangles[rectIndex] = {
                         ...newRectangles[rectIndex],
-                        fill: newColor + '40', // Adding 40 for 25% opacity
+                        fill: `${newColor}40`, // 40 hex = 25% opacity
                     };
                     setRectangles(newRectangles);
                     addToHistory(newRectangles);
@@ -1378,11 +1378,15 @@ export default function InfiniteCanvas() {
                     const circleIndex = parseInt(selectedId);
                     newCircles[circleIndex] = {
                         ...newCircles[circleIndex],
-                        fill: newColor + '40', // Adding 40 for 25% opacity
+                        fill: `${newColor}40`, // 40 hex = 25% opacity
                     };
                     setCircles(newCircles);
                     addToHistory(newCircles);
                     break;
+                default:
+                    console.warn(
+                        `Fill color change not supported for shape type: ${selectedShape}`,
+                    );
             }
         }
     };
