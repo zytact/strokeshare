@@ -7,6 +7,7 @@ import {
     Text,
     Rect,
     Circle,
+    Image,
 } from 'react-konva';
 import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
@@ -29,11 +30,13 @@ import {
     PaintBucket,
     Palette,
     Circle as CircleIcon,
+    Image as ImageIcon,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
 import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
+import useImage from 'use-image'; // Add this import
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
@@ -176,6 +179,60 @@ const isPointNearCircle = (
     return Math.abs(distance - scaledRadius) <= eraserRadius * scale;
 };
 
+// Add this function after other isPointNear... functions
+const isPointNearImage = (
+    px: number,
+    py: number,
+    image: Image,
+    stage: Konva.Stage,
+    eraserRadius: number,
+) => {
+    // Convert coordinates to stage space
+    const scale = stage.scaleX();
+    const box = {
+        x: image.x * scale + stage.x(),
+        y: image.y * scale + stage.y(),
+        width: image.width * scale,
+        height: image.height * scale,
+    };
+
+    const point = {
+        x: px * scale + stage.x(),
+        y: py * scale + stage.y(),
+    };
+
+    const scaledRadius = eraserRadius * scale;
+
+    // Check if point is near the edges
+    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
+    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
+    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
+    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
+
+    const insideX =
+        point.x >= box.x - scaledRadius &&
+        point.x <= box.x + box.width + scaledRadius;
+    const insideY =
+        point.y >= box.y - scaledRadius &&
+        point.y <= box.y + box.height + scaledRadius;
+
+    return (
+        (insideX && (nearTop || nearBottom)) ||
+        (insideY && (nearLeft || nearRight))
+    );
+};
+
+// Add this component above InfiniteCanvas
+interface LoadedImageProps
+    extends Omit<React.ComponentProps<typeof Image>, 'image'> {
+    src: string;
+}
+
+const LoadedImage = ({ src, ...imageProps }: LoadedImageProps) => {
+    const [image] = useImage(src);
+    return <Image image={image} {...imageProps} />;
+};
+
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
     const [isDrawing, setIsDrawing] = useState(false);
@@ -208,11 +265,13 @@ export default function InfiniteCanvas() {
         setRectangles,
         circles,
         setCircles,
+        images,
+        setImages,
     } = useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [selectedShape, setSelectedShape] = useState<
-        'line' | 'text' | 'rectangle' | 'circle' | null
+        'line' | 'text' | 'rectangle' | 'circle' | 'image' | null
     >(null);
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(3);
@@ -270,6 +329,8 @@ export default function InfiniteCanvas() {
                 shape = stage.findOne('#rect-' + selectedId);
             } else if (selectedShape === 'circle') {
                 shape = stage.findOne('#circle-' + selectedId);
+            } else if (selectedShape === 'image') {
+                shape = stage.findOne('#image-' + selectedId);
             }
 
             if (shape) {
@@ -614,10 +675,22 @@ export default function InfiniteCanvas() {
                 );
             });
 
+            // Handle image erasing
+            const updatedImages = images.filter((image) => {
+                return !isPointNearImage(
+                    stagePoint.x,
+                    stagePoint.y,
+                    image,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
             setTextElements(updatedTextElements);
             setRectangles(updatedRectangles);
             setCircles(updatedCircles);
+            setImages(updatedImages);
             return;
         }
 
@@ -703,6 +776,7 @@ export default function InfiniteCanvas() {
             addToHistory(textElements);
             addToHistory(rectangles);
             addToHistory(circles);
+            addToHistory(images);
         }
         if (rectangleMode && startPoint) {
             setStartPoint(null);
@@ -1130,10 +1204,22 @@ export default function InfiniteCanvas() {
                 );
             });
 
+            // Handle image erasing
+            const updatedImages = images.filter((image) => {
+                return !isPointNearImage(
+                    stagePoint.x,
+                    stagePoint.y,
+                    image,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
             setTextElements(updatedTextElements);
             setRectangles(updatedRectangles);
             setCircles(updatedCircles);
+            setImages(updatedImages);
             return;
         }
 
@@ -1219,6 +1305,7 @@ export default function InfiniteCanvas() {
             addToHistory(textElements);
             addToHistory(rectangles);
             addToHistory(circles);
+            addToHistory(images);
         }
         if (rectangleMode && startPoint) {
             setStartPoint(null);
@@ -1391,6 +1478,94 @@ export default function InfiniteCanvas() {
         }
     };
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new window.Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const scale = Math.min(300 / img.width, 300 / img.height);
+                    const newImage: Image = {
+                        x:
+                            dimensions.width / 2 / stageScale -
+                            (img.width * scale) / 2 -
+                            stagePos.x / stageScale,
+                        y:
+                            dimensions.height / 2 / stageScale -
+                            (img.height * scale) / 2 -
+                            stagePos.y / stageScale,
+                        width: img.width * scale,
+                        height: img.height * scale,
+                        src: event.target?.result as string,
+                        id: `image-${Date.now()}`,
+                    };
+                    setImages([...images, newImage]);
+                    addToHistory([...images, newImage]);
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Add this effect after other useEffect hooks
+    useEffect(() => {
+        const handlePaste = async (e: ClipboardEvent) => {
+            if (e.clipboardData && e.clipboardData.items) {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                const img = new window.Image();
+                                img.src = event.target?.result as string;
+                                img.onload = () => {
+                                    const scale = Math.min(
+                                        300 / img.width,
+                                        300 / img.height,
+                                    );
+                                    const newImage: Image = {
+                                        x:
+                                            dimensions.width / 2 / stageScale -
+                                            (img.width * scale) / 2 -
+                                            stagePos.x / stageScale,
+                                        y:
+                                            dimensions.height / 2 / stageScale -
+                                            (img.height * scale) / 2 -
+                                            stagePos.y / stageScale,
+                                        width: img.width * scale,
+                                        height: img.height * scale,
+                                        src: event.target?.result as string,
+                                        id: `image-${Date.now()}`,
+                                    };
+                                    setImages([...images, newImage]);
+                                    addToHistory([...images, newImage]);
+                                };
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [
+        addToHistory,
+        dimensions.height,
+        dimensions.width,
+        images,
+        stagePos.x,
+        stagePos.y,
+        stageScale,
+    ]);
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1520,6 +1695,17 @@ export default function InfiniteCanvas() {
                         }}
                     >
                         <CircleIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="relative">
+                    <Button aria-label="upload-image" className="relative">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                        />
+                        <ImageIcon className="h-4 w-4" />
                     </Button>
                 </div>
                 <div>
@@ -2198,6 +2384,88 @@ export default function InfiniteCanvas() {
                                 }}
                                 onDragEnd={() => {
                                     addToHistory(textElements);
+                                }}
+                            />
+                        ))}
+                        {images.map((image) => (
+                            <LoadedImage
+                                key={image.id}
+                                id={image.id}
+                                src={image.src}
+                                x={image.x}
+                                y={image.y}
+                                width={image.width}
+                                height={image.height}
+                                draggable={moveMode}
+                                onClick={(e: KonvaEventObject<Event>) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(image.id);
+                                        setSelectedShape('image');
+                                    }
+                                }}
+                                onTouchStart={(
+                                    e: KonvaEventObject<TouchEvent>,
+                                ) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(image.id);
+                                        setSelectedShape('image');
+                                    }
+                                }}
+                                onTransformEnd={(
+                                    e: KonvaEventObject<Event>,
+                                ) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+
+                                    const newImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                                  width: node.width() * scaleX,
+                                                  height:
+                                                      node.height() * scaleY,
+                                              }
+                                            : img,
+                                    );
+
+                                    setImages(newImages);
+                                    addToHistory(newImages);
+                                }}
+                                onDragMove={(e: KonvaEventObject<Event>) => {
+                                    const node = e.target;
+                                    const updatedImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                              }
+                                            : img,
+                                    );
+                                    setImages(updatedImages);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(images);
                                 }}
                             />
                         ))}

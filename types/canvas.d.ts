@@ -41,3 +41,12 @@ interface Circle {
     isDashed?: boolean;
     fill?: string;
 }
+
+interface Image {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    src: string;
+    id: string;
+}
