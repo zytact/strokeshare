@@ -20,9 +20,10 @@ vi.mock('konva', () => ({
             scale: vi.fn(),
             position: vi.fn(),
         })),
-        Layer: vi.fn(() => ({
+        Layer: vi.fn((props) => ({
             add: vi.fn(),
             batchDraw: vi.fn(),
+            ...props, // This will allow props like data-testid to be passed through
         })),
         Line: vi.fn(() => ({
             on: vi.fn(),
@@ -639,6 +640,81 @@ describe('InfiniteCanvas Rectangle Mode', () => {
         const moveButton = screen.getByRole('button', { name: /move/i });
 
         // Enable move mode without selecting any rectangle
+        fireEvent.click(moveButton);
+
+        // Fill button should be disabled
+        const fillButton = screen.getByRole('button', { name: /fill/i });
+        const fillInput = fillButton.querySelector('input[type="color"]');
+
+        expect(fillButton).toBeDisabled();
+        expect(fillInput).toBeDisabled();
+    });
+});
+
+describe('InfiniteCanvas Circle Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('toggles circle mode when circle button is clicked', () => {
+        render(<InfiniteCanvas />);
+        const circleButton = screen.getByRole('button', { name: /circle/i });
+
+        // Click circle button
+        fireEvent.click(circleButton);
+        expect(circleButton).toHaveClass('bg-secondary');
+
+        // Click again to disable
+        fireEvent.click(circleButton);
+        expect(circleButton).toHaveClass('bg-primary');
+    });
+
+    it('disables other modes when circle mode is enabled', () => {
+        render(<InfiniteCanvas />);
+        const circleButton = screen.getByRole('button', { name: /circle/i });
+        const handButton = screen.getByRole('button', { name: /hand/i });
+        const eraserButton = screen.getByRole('button', { name: /eraser/i });
+
+        // Enable circle mode
+        fireEvent.click(circleButton);
+
+        // Other buttons should not be in secondary mode
+        expect(handButton).not.toHaveClass('bg-secondary');
+        expect(eraserButton).not.toHaveClass('bg-secondary');
+    });
+
+    it('supports dashed style for circles', () => {
+        render(<InfiniteCanvas />);
+        const moveButton = screen.getByRole('button', { name: /move/i });
+        const dashButton = screen.getByRole('button', { name: /dashed-line/i });
+        const canvas = screen.getByRole('presentation');
+        const circleButton = screen.getByRole('button', { name: /circle/i });
+
+        // Draw a circle first
+        fireEvent.click(circleButton);
+        fireEvent.mouseDown(canvas, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(canvas, { clientX: 150, clientY: 150 });
+        fireEvent.mouseUp(canvas);
+
+        // Enable move mode and select the circle
+        fireEvent.click(moveButton);
+        fireEvent.click(canvas);
+
+        // Toggle dash for selected circle
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-secondary');
+
+        // Toggle dash off for selected circle
+        fireEvent.click(dashButton);
+        expect(dashButton).toHaveClass('bg-primary');
+    });
+
+    it('disables fill color button when no circle is selected', () => {
+        render(<InfiniteCanvas />);
+        const moveButton = screen.getByRole('button', { name: /move/i });
+
+        // Enable move mode without selecting any circle
         fireEvent.click(moveButton);
 
         // Fill button should be disabled
