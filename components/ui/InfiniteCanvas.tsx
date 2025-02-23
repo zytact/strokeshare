@@ -1359,6 +1359,34 @@ export default function InfiniteCanvas() {
         return null;
     };
 
+    const handleFillColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newColor = e.target.value;
+        if (moveMode && selectedId && selectedShape) {
+            switch (selectedShape) {
+                case 'rectangle':
+                    const newRectangles = [...rectangles];
+                    const rectIndex = parseInt(selectedId);
+                    newRectangles[rectIndex] = {
+                        ...newRectangles[rectIndex],
+                        fill: newColor + '40', // Adding 40 for 25% opacity
+                    };
+                    setRectangles(newRectangles);
+                    addToHistory(newRectangles);
+                    break;
+                case 'circle':
+                    const newCircles = [...circles];
+                    const circleIndex = parseInt(selectedId);
+                    newCircles[circleIndex] = {
+                        ...newCircles[circleIndex],
+                        fill: newColor + '40', // Adding 40 for 25% opacity
+                    };
+                    setCircles(newCircles);
+                    addToHistory(newCircles);
+                    break;
+            }
+        }
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1564,37 +1592,7 @@ export default function InfiniteCanvas() {
                     >
                         <input
                             type="color"
-                            onChange={(e) => {
-                                const newColor = e.target.value;
-                                if (moveMode && selectedId && selectedShape) {
-                                    switch (selectedShape) {
-                                        case 'rectangle':
-                                            const newRectangles = [
-                                                ...rectangles,
-                                            ];
-                                            const rectIndex =
-                                                parseInt(selectedId);
-                                            newRectangles[rectIndex] = {
-                                                ...newRectangles[rectIndex],
-                                                fill: newColor,
-                                            };
-                                            setRectangles(newRectangles);
-                                            addToHistory(newRectangles);
-                                            break;
-                                        case 'circle':
-                                            const newCircles = [...circles];
-                                            const circleIndex =
-                                                parseInt(selectedId);
-                                            newCircles[circleIndex] = {
-                                                ...newCircles[circleIndex],
-                                                fill: newColor,
-                                            };
-                                            setCircles(newCircles);
-                                            addToHistory(newCircles);
-                                            break;
-                                    }
-                                }
-                            }}
+                            onChange={handleFillColorChange}
                             className="absolute inset-0 cursor-pointer opacity-0"
                             disabled={
                                 !moveMode ||
