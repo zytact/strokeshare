@@ -48,7 +48,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(19);
+        expect(buttons).toHaveLength(20);
     });
 
     it('toggles drag mode when hand button is clicked', () => {
@@ -723,5 +723,72 @@ describe('InfiniteCanvas Circle Mode', () => {
 
         expect(fillButton).toBeDisabled();
         expect(fillInput).toBeDisabled();
+    });
+});
+
+describe('InfiniteCanvas Image Mode', () => {
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+    });
+
+    it('renders upload image button', () => {
+        render(<InfiniteCanvas />);
+        const imageButton = screen.getByRole('button', {
+            name: /upload-image/i,
+        });
+        expect(imageButton).toBeInTheDocument();
+    });
+
+    it('accepts image file upload', () => {
+        render(<InfiniteCanvas />);
+        const imageButton = screen.getByRole('button', {
+            name: /upload-image/i,
+        });
+        const fileInput = imageButton.querySelector('input[type="file"]');
+
+        expect(fileInput).toBeInTheDocument();
+        expect(fileInput).toHaveAttribute('accept', 'image/*');
+    });
+
+    it('handles image file upload', async () => {
+        render(<InfiniteCanvas />);
+        const imageButton = screen.getByRole('button', {
+            name: /upload-image/i,
+        });
+        const fileInput = imageButton.querySelector(
+            'input[type="file"]',
+        ) as HTMLInputElement;
+
+        const file = new File(['dummy content'], 'test.png', {
+            type: 'image/png',
+        });
+        const dataTransfer = {
+            files: [file],
+        };
+
+        fireEvent.change(fileInput, { target: dataTransfer });
+    });
+
+    it('handles image paste event', () => {
+        render(<InfiniteCanvas />);
+
+        // Create a mock clipboard event with image data
+        const clipboardData = {
+            items: [
+                {
+                    type: 'image/png',
+                    getAsFile: () =>
+                        new File(['dummy content'], 'pasted.png', {
+                            type: 'image/png',
+                        }),
+                },
+            ],
+        };
+
+        // Dispatch paste event
+        fireEvent.paste(document, {
+            clipboardData,
+        });
     });
 });

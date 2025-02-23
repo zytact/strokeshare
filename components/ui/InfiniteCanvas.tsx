@@ -226,11 +226,12 @@ const isPointNearImage = (
 interface LoadedImageProps
     extends Omit<React.ComponentProps<typeof Image>, 'image'> {
     src: string;
+    alt: string;
 }
 
-const LoadedImage = ({ src, ...imageProps }: LoadedImageProps) => {
+const LoadedImage = ({ src, alt, ...imageProps }: LoadedImageProps) => {
     const [image] = useImage(src);
-    return <Image image={image} {...imageProps} />;
+    return <Image image={image} alt={alt} {...imageProps} />;
 };
 
 export default function InfiniteCanvas() {
@@ -1566,6 +1567,7 @@ export default function InfiniteCanvas() {
         stagePos.x,
         stagePos.y,
         stageScale,
+        setImages,
     ]);
 
     return (
@@ -2394,6 +2396,7 @@ export default function InfiniteCanvas() {
                                 key={image.id}
                                 id={image.id}
                                 src={image.src}
+                                alt={`User uploaded content ${image.id}`}
                                 x={image.x}
                                 y={image.y}
                                 width={image.width}
