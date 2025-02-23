@@ -148,7 +148,6 @@ const isPointNearRectangle = (
     );
 };
 
-// Add this function after other isPointNear... functions
 const isPointNearCircle = (
     px: number,
     py: number,
@@ -179,7 +178,6 @@ const isPointNearCircle = (
     return Math.abs(distance - scaledRadius) <= eraserRadius * scale;
 };
 
-// Add this function after other isPointNear... functions
 const isPointNearImage = (
     px: number,
     py: number,
@@ -222,7 +220,6 @@ const isPointNearImage = (
     );
 };
 
-// Add this component above InfiniteCanvas
 interface LoadedImageProps
     extends Omit<React.ComponentProps<typeof Image>, 'image'> {
     src: string;
@@ -308,7 +305,6 @@ export default function InfiniteCanvas() {
         resetTransformer();
     };
 
-    // Update the moveMode effect
     useEffect(() => {
         if (!moveMode) {
             resetTransformer();
@@ -817,7 +813,7 @@ export default function InfiniteCanvas() {
         });
     };
 
-    const handleTransformEnd = (
+    const handleLineTransformEnd = (
         e: KonvaEventObject<Event>,
         lineIndex: number,
     ) => {
@@ -1014,7 +1010,7 @@ export default function InfiniteCanvas() {
                 color: currentColor,
                 strokeWidth: strokeWidth,
                 isDashed: dashedMode,
-                cornerRadius: 8, // Add this line
+                cornerRadius: 8,
                 fill: undefined,
             };
             setRectangles([...rectangles, newRect]);
@@ -2051,7 +2047,9 @@ export default function InfiniteCanvas() {
                                         setSelectedShape('line');
                                     }
                                 }}
-                                onTransformEnd={(e) => handleTransformEnd(e, i)}
+                                onTransformEnd={(e) =>
+                                    handleLineTransformEnd(e, i)
+                                }
                                 sceneFunc={(context, shape) => {
                                     context.beginPath();
 

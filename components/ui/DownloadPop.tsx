@@ -37,7 +37,8 @@ export function DownloadPop({
     const { exportWithBackground, setExportWithBackground } =
         useDownloadPopStore();
 
-    const { lines, textElements, rectangles, circles } = useCanvasStore();
+    const { lines, textElements, rectangles, circles, images } =
+        useCanvasStore();
 
     const handlePNG = () => {
         if (!stageRef.current) return;
@@ -101,7 +102,14 @@ export function DownloadPop({
 
         let svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-    <svg width="${stageWidth}" height="${stageHeight}" xmlns="http://www.w3.org/2000/svg">`;
+    <svg width="${stageWidth}" height="${stageHeight}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">`;
+
+        // Add defs section for images
+        svg += '<defs>';
+        images.forEach((image, index) => {
+            svg += `<image id="img${index}" href="${image.src}" />`;
+        });
+        svg += '</defs>';
 
         if (exportWithBackground) {
             const backgroundColor =
@@ -110,6 +118,17 @@ export function DownloadPop({
         }
 
         svg += `<g transform="translate(${stagePos.x},${stagePos.y}) scale(${stageScale})">`;
+
+        // Add images first (to be in the background)
+        images.forEach((image, index) => {
+            svg += `<use 
+                xlink:href="#img${index}" 
+                x="${image.x}" 
+                y="${image.y}" 
+                width="${image.width}" 
+                height="${image.height}"
+            />`;
+        });
 
         // Add rectangles first (to be in the background)
         rectangles.forEach((rect) => {
