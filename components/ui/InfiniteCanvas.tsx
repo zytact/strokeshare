@@ -36,7 +36,7 @@ import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
 import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
-import useImage from 'use-image'; // Add this import
+import useImage from 'use-image';
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
