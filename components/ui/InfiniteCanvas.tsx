@@ -777,15 +777,16 @@ export default function InfiniteCanvas() {
             };
             addToHistory(currentState);
         }
-        if (rectangleMode && startPoint) {
-            setStartPoint(null);
+        if (rectangleMode) {
+            // Add history even if no startPoint to ensure proper state update
             addToHistory(rectangles);
-            return;
-        }
-        if (circleMode && startPoint) {
+            // Reset startPoint to allow drawing new rectangles
             setStartPoint(null);
+        }
+        if (circleMode) {
             addToHistory(circles);
-            return;
+            // Reset startPoint to allow drawing new circles
+            setStartPoint(null);
         }
     };
 
@@ -1300,21 +1301,25 @@ export default function InfiniteCanvas() {
         }
         if (isErasing) {
             setIsErasing(false);
-            addToHistory(lines);
-            addToHistory(textElements);
-            addToHistory(rectangles);
-            addToHistory(circles);
-            addToHistory(images);
+            const currentState = {
+                lines,
+                textElements,
+                rectangles,
+                circles,
+                images,
+            };
+            addToHistory(currentState);
         }
-        if (rectangleMode && startPoint) {
-            setStartPoint(null);
+        if (rectangleMode) {
+            // Add history even if no startPoint to ensure proper state update
             addToHistory(rectangles);
-            return;
-        }
-        if (circleMode && startPoint) {
+            // Reset startPoint to allow drawing new rectangles
             setStartPoint(null);
+        }
+        if (circleMode) {
             addToHistory(circles);
-            return;
+            // Reset startPoint to allow drawing new circles
+            setStartPoint(null);
         }
     };
 
