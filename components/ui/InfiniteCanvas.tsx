@@ -2397,7 +2397,7 @@ export default function InfiniteCanvas() {
                         {images.map((image) => (
                             <LoadedImage
                                 key={image.id}
-                                id={image.id}
+                                id={`image-${image.id}`} // Ensure consistent ID format
                                 src={image.src}
                                 alt={`User uploaded content ${image.id}`}
                                 x={image.x}
@@ -2408,14 +2408,22 @@ export default function InfiniteCanvas() {
                                 onClick={(e: KonvaEventObject<Event>) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
                                         }
-                                        setSelectedId(image.id);
-                                        setSelectedShape('image');
                                     }
                                 }}
                                 onTouchStart={(
@@ -2423,14 +2431,22 @@ export default function InfiniteCanvas() {
                                 ) => {
                                     if (moveMode) {
                                         e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
                                         }
-                                        setSelectedId(image.id);
-                                        setSelectedShape('image');
                                     }
                                 }}
                                 onTransformEnd={(
