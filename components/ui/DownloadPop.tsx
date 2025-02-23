@@ -37,7 +37,7 @@ export function DownloadPop({
     const { exportWithBackground, setExportWithBackground } =
         useDownloadPopStore();
 
-    const { lines, textElements, rectangles } = useCanvasStore();
+    const { lines, textElements, rectangles, circles } = useCanvasStore();
 
     const handlePNG = () => {
         if (!stageRef.current) return;
@@ -123,6 +123,19 @@ export function DownloadPop({
                 ${rect.fill ? `fill="${rect.fill}"` : 'fill="none"'}
                 ${rect.cornerRadius ? `rx="${rect.cornerRadius}" ry="${rect.cornerRadius}"` : ''}
                 ${rect.isDashed ? 'stroke-dasharray="10 10"' : ''}
+            />`;
+        });
+
+        // Add circles
+        circles.forEach((circle) => {
+            svg += `<circle 
+                cx="${circle.x}" 
+                cy="${circle.y}" 
+                r="${circle.radius}" 
+                stroke="${circle.color}"
+                stroke-width="${circle.strokeWidth || strokeWidth}"
+                ${circle.fill ? `fill="${circle.fill}"` : 'fill="none"'}
+                ${circle.isDashed ? 'stroke-dasharray="10 10"' : ''}
             />`;
         });
 
