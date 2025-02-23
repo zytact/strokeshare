@@ -1,5 +1,13 @@
 'use client';
-import { Stage, Layer, Line, Transformer, Text, Rect } from 'react-konva';
+import {
+    Stage,
+    Layer,
+    Line,
+    Transformer,
+    Text,
+    Rect,
+    Circle,
+} from 'react-konva';
 import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
@@ -20,6 +28,7 @@ import {
     Square,
     PaintBucket,
     Palette,
+    Circle as CircleIcon,
 } from 'lucide-react';
 import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -136,6 +145,37 @@ const isPointNearRectangle = (
     );
 };
 
+// Add this function after other isPointNear... functions
+const isPointNearCircle = (
+    px: number,
+    py: number,
+    circle: Circle,
+    stage: Konva.Stage,
+    eraserRadius: number,
+) => {
+    // Convert the circle's position to the same coordinate space as the eraser point
+    const scale = stage.scaleX();
+    const circleCenter = {
+        x: circle.x * scale + stage.x(),
+        y: circle.y * scale + stage.y(),
+    };
+    const scaledRadius = circle.radius * scale;
+
+    // Convert the point to the same coordinate space
+    const point = {
+        x: px * scale + stage.x(),
+        y: py * scale + stage.y(),
+    };
+
+    // Calculate distance from point to circle's edge
+    const dx = point.x - circleCenter.x;
+    const dy = point.y - circleCenter.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Check if point is near the circle's edge
+    return Math.abs(distance - scaledRadius) <= eraserRadius * scale;
+};
+
 export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
     const [isDrawing, setIsDrawing] = useState(false);
@@ -166,11 +206,13 @@ export default function InfiniteCanvas() {
         canRedo,
         rectangles,
         setRectangles,
+        circles,
+        setCircles,
     } = useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [selectedShape, setSelectedShape] = useState<
-        'line' | 'text' | 'rectangle' | null
+        'line' | 'text' | 'rectangle' | 'circle' | null
     >(null);
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(3);
@@ -180,6 +222,7 @@ export default function InfiniteCanvas() {
     const [dashedMode, setDashedMode] = useState(false);
     const [rectangleMode, setRectangleMode] = useState(false);
     const [startPoint, setStartPoint] = useState<Point | null>(null);
+    const [circleMode, setCircleMode] = useState(false);
 
     const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -201,6 +244,7 @@ export default function InfiniteCanvas() {
         setLineSegmentMode(false);
         setArrowMode(false);
         setRectangleMode(false);
+        setCircleMode(false);
         resetTransformer();
     };
 
@@ -224,6 +268,8 @@ export default function InfiniteCanvas() {
                 shape = stage.findOne('#' + selectedId);
             } else if (selectedShape === 'rectangle') {
                 shape = stage.findOne('#rect-' + selectedId);
+            } else if (selectedShape === 'circle') {
+                shape = stage.findOne('#circle-' + selectedId);
             }
 
             if (shape) {
@@ -437,6 +483,29 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (evt.button === 0 && circleMode) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            setStartPoint(stagePoint);
+            const newCircle = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                radius: 0,
+                color: currentColor,
+                strokeWidth: strokeWidth,
+                isDashed: dashedMode,
+                fill: undefined,
+            };
+            setCircles([...circles, newCircle]);
+            return;
+        }
+
         if (
             evt.button === 0 &&
             !dragModeEnabled &&
@@ -444,7 +513,8 @@ export default function InfiniteCanvas() {
             !eraserMode &&
             !lineSegmentMode &&
             !arrowMode &&
-            !rectangleMode
+            !rectangleMode &&
+            !circleMode
         ) {
             setIsDrawing(true);
             setLines([
@@ -533,9 +603,21 @@ export default function InfiniteCanvas() {
                 );
             });
 
+            // Handle circle erasing
+            const updatedCircles = circles.filter((circle) => {
+                return !isPointNearCircle(
+                    stagePoint.x,
+                    stagePoint.y,
+                    circle,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
             setTextElements(updatedTextElements);
             setRectangles(updatedRectangles);
+            setCircles(updatedCircles);
             return;
         }
 
@@ -571,6 +653,29 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (circleMode && startPoint) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const dx = stagePoint.x - startPoint.x;
+            const dy = stagePoint.y - startPoint.y;
+            const radius = Math.sqrt(dx * dx + dy * dy);
+
+            const lastCircle = [...circles];
+            const index = lastCircle.length - 1;
+            lastCircle[index] = {
+                ...lastCircle[index],
+                radius: radius,
+            };
+            setCircles(lastCircle);
+            return;
+        }
+
         if (!isDrawing) return;
 
         const lastLine = [...lines];
@@ -597,10 +702,16 @@ export default function InfiniteCanvas() {
             // Add history update for text elements
             addToHistory(textElements);
             addToHistory(rectangles);
+            addToHistory(circles);
         }
         if (rectangleMode && startPoint) {
             setStartPoint(null);
             addToHistory(rectangles);
+            return;
+        }
+        if (circleMode && startPoint) {
+            setStartPoint(null);
+            addToHistory(circles);
             return;
         }
     };
@@ -833,6 +944,29 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (circleMode) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            setStartPoint(stagePoint);
+            const newCircle = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                radius: 0,
+                color: currentColor,
+                strokeWidth: strokeWidth,
+                isDashed: dashedMode,
+                fill: undefined,
+            };
+            setCircles([...circles, newCircle]);
+            return;
+        }
+
         if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
             setIsDrawing(true);
             setLines([
@@ -985,9 +1119,21 @@ export default function InfiniteCanvas() {
                 );
             });
 
+            // Handle circle erasing
+            const updatedCircles = circles.filter((circle) => {
+                return !isPointNearCircle(
+                    stagePoint.x,
+                    stagePoint.y,
+                    circle,
+                    stage,
+                    eraserRadius,
+                );
+            });
+
             setLines(updatedLines);
             setTextElements(updatedTextElements);
             setRectangles(updatedRectangles);
+            setCircles(updatedCircles);
             return;
         }
 
@@ -1023,6 +1169,29 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        if (circleMode && startPoint) {
+            const point = e.target.getStage()?.getPointerPosition();
+            if (!point) return;
+
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const dx = stagePoint.x - startPoint.x;
+            const dy = stagePoint.y - startPoint.y;
+            const radius = Math.sqrt(dx * dx + dy * dy);
+
+            const lastCircle = [...circles];
+            const index = lastCircle.length - 1;
+            lastCircle[index] = {
+                ...lastCircle[index],
+                radius: radius,
+            };
+            setCircles(lastCircle);
+            return;
+        }
+
         if (!isDrawing) return;
 
         const lastLine = [...lines];
@@ -1049,10 +1218,16 @@ export default function InfiniteCanvas() {
             addToHistory(lines);
             addToHistory(textElements);
             addToHistory(rectangles);
+            addToHistory(circles);
         }
         if (rectangleMode && startPoint) {
             setStartPoint(null);
             addToHistory(rectangles);
+            return;
+        }
+        if (circleMode && startPoint) {
+            setStartPoint(null);
+            addToHistory(circles);
             return;
         }
     };
@@ -1177,6 +1352,13 @@ export default function InfiniteCanvas() {
         return null;
     };
 
+    const getSelectedCircle = () => {
+        if (selectedId && selectedShape === 'circle') {
+            return circles[parseInt(selectedId)];
+        }
+        return null;
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
@@ -1294,11 +1476,28 @@ export default function InfiniteCanvas() {
                 </div>
                 <div>
                     <Button
+                        aria-label="circle"
+                        variant={circleMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (circleMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setCircleMode(true);
+                            }
+                        }}
+                    >
+                        <CircleIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
                         aria-label="dashed-line"
                         variant={
                             moveMode &&
                             (getSelectedLine()?.isDashed ||
-                                getSelectedRect()?.isDashed)
+                                getSelectedRect()?.isDashed ||
+                                getSelectedCircle()?.isDashed)
                                 ? 'secondary'
                                 : dashedMode
                                   ? 'secondary'
@@ -1306,27 +1505,43 @@ export default function InfiniteCanvas() {
                         }
                         onClick={() => {
                             if (moveMode && selectedId) {
-                                if (selectedShape === 'line') {
-                                    // Toggle dash for selected line
-                                    const newLines = [...lines];
-                                    const lineIndex = parseInt(selectedId);
-                                    newLines[lineIndex] = {
-                                        ...newLines[lineIndex],
-                                        isDashed: !newLines[lineIndex].isDashed,
-                                    };
-                                    setLines(newLines);
-                                    addToHistory(newLines);
-                                } else if (selectedShape === 'rectangle') {
-                                    // Toggle dash for selected rectangle
-                                    const newRectangles = [...rectangles];
-                                    const rectIndex = parseInt(selectedId);
-                                    newRectangles[rectIndex] = {
-                                        ...newRectangles[rectIndex],
-                                        isDashed:
-                                            !newRectangles[rectIndex].isDashed,
-                                    };
-                                    setRectangles(newRectangles);
-                                    addToHistory(newRectangles);
+                                switch (selectedShape) {
+                                    case 'line':
+                                        const newLines = [...lines];
+                                        const lineIndex = parseInt(selectedId);
+                                        newLines[lineIndex] = {
+                                            ...newLines[lineIndex],
+                                            isDashed:
+                                                !newLines[lineIndex].isDashed,
+                                        };
+                                        setLines(newLines);
+                                        addToHistory(newLines);
+                                        break;
+                                    case 'rectangle':
+                                        const newRectangles = [...rectangles];
+                                        const rectIndex = parseInt(selectedId);
+                                        newRectangles[rectIndex] = {
+                                            ...newRectangles[rectIndex],
+                                            isDashed:
+                                                !newRectangles[rectIndex]
+                                                    .isDashed,
+                                        };
+                                        setRectangles(newRectangles);
+                                        addToHistory(newRectangles);
+                                        break;
+                                    case 'circle':
+                                        const newCircles = [...circles];
+                                        const circleIndex =
+                                            parseInt(selectedId);
+                                        newCircles[circleIndex] = {
+                                            ...newCircles[circleIndex],
+                                            isDashed:
+                                                !newCircles[circleIndex]
+                                                    .isDashed,
+                                        };
+                                        setCircles(newCircles);
+                                        addToHistory(newCircles);
+                                        break;
                                 }
                             } else {
                                 // Toggle global dash mode
@@ -1341,30 +1556,50 @@ export default function InfiniteCanvas() {
                     <Button
                         aria-label="fill"
                         className="relative"
-                        disabled={!moveMode || selectedShape !== 'rectangle'}
+                        disabled={
+                            !moveMode ||
+                            (selectedShape !== 'rectangle' &&
+                                selectedShape !== 'circle')
+                        }
                     >
                         <input
                             type="color"
                             onChange={(e) => {
                                 const newColor = e.target.value;
-                                if (
-                                    moveMode &&
-                                    selectedId &&
-                                    selectedShape === 'rectangle'
-                                ) {
-                                    const newRectangles = [...rectangles];
-                                    const rectIndex = parseInt(selectedId);
-                                    newRectangles[rectIndex] = {
-                                        ...newRectangles[rectIndex],
-                                        fill: newColor,
-                                    };
-                                    setRectangles(newRectangles);
-                                    addToHistory(newRectangles);
+                                if (moveMode && selectedId && selectedShape) {
+                                    switch (selectedShape) {
+                                        case 'rectangle':
+                                            const newRectangles = [
+                                                ...rectangles,
+                                            ];
+                                            const rectIndex =
+                                                parseInt(selectedId);
+                                            newRectangles[rectIndex] = {
+                                                ...newRectangles[rectIndex],
+                                                fill: newColor,
+                                            };
+                                            setRectangles(newRectangles);
+                                            addToHistory(newRectangles);
+                                            break;
+                                        case 'circle':
+                                            const newCircles = [...circles];
+                                            const circleIndex =
+                                                parseInt(selectedId);
+                                            newCircles[circleIndex] = {
+                                                ...newCircles[circleIndex],
+                                                fill: newColor,
+                                            };
+                                            setCircles(newCircles);
+                                            addToHistory(newCircles);
+                                            break;
+                                    }
                                 }
                             }}
                             className="absolute inset-0 cursor-pointer opacity-0"
                             disabled={
-                                !moveMode || selectedShape !== 'rectangle'
+                                !moveMode ||
+                                (selectedShape !== 'rectangle' &&
+                                    selectedShape !== 'circle')
                             }
                         />
                         <PaintBucket className="h-4 w-4" />
@@ -1405,6 +1640,17 @@ export default function InfiniteCanvas() {
                                             };
                                             setRectangles(newRectangles);
                                             addToHistory(newRectangles);
+                                            break;
+                                        case 'circle':
+                                            const newCircles = [...circles];
+                                            const circleIndex =
+                                                parseInt(selectedId);
+                                            newCircles[circleIndex] = {
+                                                ...newCircles[circleIndex],
+                                                color: newColor,
+                                            };
+                                            setCircles(newCircles);
+                                            addToHistory(newCircles);
                                             break;
                                     }
                                 }
@@ -1779,6 +2025,90 @@ export default function InfiniteCanvas() {
                                 }}
                                 onDragEnd={() => {
                                     addToHistory(rectangles);
+                                }}
+                            />
+                        ))}
+                        {circles.map((circle, i) => (
+                            <Circle
+                                key={`circle-${i}`}
+                                id={`circle-${i}`}
+                                {...circle}
+                                stroke={circle.color}
+                                strokeWidth={circle.strokeWidth}
+                                dash={circle.isDashed ? [10, 10] : undefined}
+                                draggable={moveMode}
+                                fill={circle.fill}
+                                onClick={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(String(i));
+                                        setSelectedShape('circle');
+                                    }
+                                }}
+                                onTouchStart={(e) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+                                        const transformer =
+                                            transformerRef.current;
+                                        if (transformer) {
+                                            transformer.nodes([e.target]);
+                                            transformer.getLayer()?.batchDraw();
+                                        }
+                                        setSelectedId(String(i));
+                                        setSelectedShape('circle');
+                                    }
+                                }}
+                                onTransformEnd={(e) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    // Reset scale
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+
+                                    const newCircles = circles.map(
+                                        (c, index) =>
+                                            index === i
+                                                ? {
+                                                      ...c,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                      radius:
+                                                          c.radius *
+                                                          Math.max(
+                                                              scaleX,
+                                                              scaleY,
+                                                          ),
+                                                  }
+                                                : c,
+                                    );
+
+                                    setCircles(newCircles);
+                                    addToHistory(newCircles);
+                                }}
+                                onDragMove={(e) => {
+                                    const node = e.target;
+                                    const updatedCircles = circles.map(
+                                        (c, index) =>
+                                            index === i
+                                                ? {
+                                                      ...c,
+                                                      x: node.x(),
+                                                      y: node.y(),
+                                                  }
+                                                : c,
+                                    );
+                                    setCircles(updatedCircles);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(circles);
                                 }}
                             />
                         ))}

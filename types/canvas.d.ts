@@ -31,3 +31,13 @@ interface Rectangle {
     cornerRadius?: number;
     fill?: string;
 }
+
+interface Circle {
+    x: number;
+    y: number;
+    radius: number;
+    color: string;
+    strokeWidth?: number;
+    isDashed?: boolean;
+    fill?: string;
+}
