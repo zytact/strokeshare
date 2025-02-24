@@ -59,7 +59,7 @@ export function TextSizeButtons({
 
     if (textMode || (moveMode && selectedShape === 'text')) {
         return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-2 sm:flex-row">
                 {(Object.keys(TEXT_SIZES) as TextSizeKey[]).map((key) => (
                     <Button
                         key={key}
