@@ -1868,6 +1868,24 @@ export default function InfiniteCanvas() {
                                                     addToHistory(newCircles);
                                                     break;
                                                 }
+                                                case 'text': {
+                                                    const newTextElements =
+                                                        textElements.map((t) =>
+                                                            t.id === selectedId
+                                                                ? {
+                                                                      ...t,
+                                                                      fill: newColor,
+                                                                  }
+                                                                : t,
+                                                        );
+                                                    setTextElements(
+                                                        newTextElements,
+                                                    );
+                                                    addToHistory(
+                                                        newTextElements,
+                                                    );
+                                                    break;
+                                                }
                                             }
                                         }
                                     }}
