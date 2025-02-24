@@ -63,6 +63,7 @@ export function TextSizeButtons({
                 {(Object.keys(TEXT_SIZES) as TextSizeKey[]).map((key) => (
                     <Button
                         key={key}
+                        className="w-12"
                         variant={
                             (textMode &&
                                 ((!selectedTextId &&
