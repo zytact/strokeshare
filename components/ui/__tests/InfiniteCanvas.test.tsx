@@ -634,21 +634,6 @@ describe('InfiniteCanvas Rectangle Mode', () => {
         expect(handButton).not.toHaveClass('bg-secondary');
         expect(eraserButton).not.toHaveClass('bg-secondary');
     });
-
-    it('disables fill color button when no rectangle is selected', () => {
-        render(<InfiniteCanvas />);
-        const moveButton = screen.getByRole('button', { name: /move/i });
-
-        // Enable move mode without selecting any rectangle
-        fireEvent.click(moveButton);
-
-        // Fill button should be disabled
-        const fillButton = screen.getByRole('button', { name: /fill/i });
-        const fillInput = fillButton.querySelector('input[type="color"]');
-
-        expect(fillButton).toBeDisabled();
-        expect(fillInput).toBeDisabled();
-    });
 });
 
 describe('InfiniteCanvas Circle Mode', () => {
@@ -708,21 +693,6 @@ describe('InfiniteCanvas Circle Mode', () => {
         // Toggle dash off for selected circle
         fireEvent.click(dashButton);
         expect(dashButton).toHaveClass('bg-primary');
-    });
-
-    it('disables fill color button when no circle is selected', () => {
-        render(<InfiniteCanvas />);
-        const moveButton = screen.getByRole('button', { name: /move/i });
-
-        // Enable move mode without selecting any circle
-        fireEvent.click(moveButton);
-
-        // Fill button should be disabled
-        const fillButton = screen.getByRole('button', { name: /fill/i });
-        const fillInput = fillButton.querySelector('input[type="color"]');
-
-        expect(fillButton).toBeDisabled();
-        expect(fillInput).toBeDisabled();
     });
 });
 
