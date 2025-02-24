@@ -38,6 +38,7 @@ import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
 import { Help } from '@/components/ui/Help';
+import { TextSizeButtons } from '@/components/ui/TextSizeButtons';
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
@@ -1343,7 +1344,7 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: 30,
+            fontSize: newTextSize, // Use the selected size
             fill: currentColor,
             id: newId,
         };
@@ -1571,6 +1572,8 @@ export default function InfiniteCanvas() {
         stageScale,
         setImages,
     ]);
+
+    const [newTextSize, setNewTextSize] = useState(30);
 
     return (
         <>
@@ -1870,6 +1873,18 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
+                        <TextSizeButtons
+                            textMode={textMode}
+                            moveMode={moveMode}
+                            selectedShape={selectedShape}
+                            selectedTextId={selectedTextId}
+                            newTextSize={newTextSize}
+                            textElements={textElements}
+                            selectedId={selectedId}
+                            setTextElements={setTextElements}
+                            addToHistory={addToHistory}
+                            setNewTextSize={setNewTextSize}
+                        />
                         <StrokeWidth
                             strokeWidth={strokeWidth}
                             onStrokeWidthChange={setStrokeWidth}
@@ -1938,8 +1953,14 @@ export default function InfiniteCanvas() {
                 style={{
                     color: currentColor,
                     lineHeight: '1.2',
+                    fontSize: `${
+                        selectedTextId
+                            ? textElements.find((t) => t.id === selectedTextId)
+                                  ?.fontSize
+                            : newTextSize
+                    }px`,
                 }}
-                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont text-3xl outline-none"
+                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1953,7 +1974,7 @@ export default function InfiniteCanvas() {
                         setSelectedTextId(null);
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
-                        addToHistory(lines);
+                        addToHistory(updatedTexts);
                         disableAllModes();
                     }
                 }}
@@ -1967,7 +1988,7 @@ export default function InfiniteCanvas() {
                     setSelectedTextId(null);
                     setEditingText(null);
                     textareaRef.current!.style.display = 'none';
-                    addToHistory(lines);
+                    addToHistory(updatedTexts);
                 }}
                 value={editingText || ''}
             />
