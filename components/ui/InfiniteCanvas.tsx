@@ -22,7 +22,6 @@ import {
     Undo2,
     ZoomIn,
     ZoomOut,
-    Type,
     Minus as LineIcon,
     ArrowRight,
     SquareDashed,
