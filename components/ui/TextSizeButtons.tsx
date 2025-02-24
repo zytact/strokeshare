@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface TextSizeButtonsProps {
     textMode: boolean;
@@ -11,6 +12,7 @@ interface TextSizeButtonsProps {
     setTextElements: (elements: TextElement[]) => void;
     addToHistory: (state: TextElement[]) => void;
     setNewTextSize: (size: number) => void;
+    className?: string;
 }
 
 const TEXT_SIZES = {
@@ -38,6 +40,7 @@ export function TextSizeButtons({
     setTextElements,
     addToHistory,
     setNewTextSize,
+    className,
 }: TextSizeButtonsProps) {
     const handleTextSizeChange = (size: number) => {
         if (textMode && selectedTextId) {
@@ -59,7 +62,7 @@ export function TextSizeButtons({
 
     if (textMode || (moveMode && selectedShape === 'text')) {
         return (
-            <div className="flex flex-col items-center gap-2 sm:flex-row">
+            <div className={cn('flex gap-2', className)}>
                 {(Object.keys(TEXT_SIZES) as TextSizeKey[]).map((key) => (
                     <Button
                         key={key}

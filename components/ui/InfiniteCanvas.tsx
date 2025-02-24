@@ -39,6 +39,7 @@ import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
 import { Help } from '@/components/ui/Help';
 import { TextSizeButtons } from '@/components/ui/TextSizeButtons';
+import TextButton from './TextButton';
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
@@ -1516,7 +1517,6 @@ export default function InfiniteCanvas() {
         }
     };
 
-    // Add this effect after other useEffect hooks
     useEffect(() => {
         const handlePaste = async (e: ClipboardEvent) => {
             if (e.clipboardData && e.clipboardData.items) {
@@ -1628,9 +1628,17 @@ export default function InfiniteCanvas() {
                     </Button>
                 </div>
                 <div>
-                    <Button
-                        aria-label="text"
-                        variant={textMode ? 'secondary' : 'default'}
+                    <TextButton
+                        textMode={textMode}
+                        moveMode={moveMode}
+                        selectedShape={selectedShape}
+                        selectedTextId={selectedTextId}
+                        newTextSize={newTextSize}
+                        textElements={textElements}
+                        selectedId={selectedId}
+                        setTextElements={setTextElements}
+                        addToHistory={addToHistory}
+                        setNewTextSize={setNewTextSize}
                         onClick={() => {
                             if (textMode) {
                                 disableAllModes();
@@ -1639,9 +1647,7 @@ export default function InfiniteCanvas() {
                                 setTextMode(true);
                             }
                         }}
-                    >
-                        <Type className="h-4 w-4" />
-                    </Button>
+                    />
                 </div>
                 <div>
                     <Button
@@ -1782,27 +1788,22 @@ export default function InfiniteCanvas() {
                 </div>
                 {moveMode && (
                     <>
-                        <div className="relative">
-                            <Button
-                                aria-label="fill"
-                                className="relative"
-                                disabled={
-                                    selectedShape !== 'rectangle' &&
-                                    selectedShape !== 'circle'
-                                }
-                            >
-                                <input
-                                    type="color"
-                                    onChange={handleFillColorChange}
-                                    className="absolute inset-0 cursor-pointer opacity-0"
-                                    disabled={
-                                        selectedShape !== 'rectangle' &&
-                                        selectedShape !== 'circle'
-                                    }
-                                />
-                                <PaintBucket className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        {selectedShape === 'rectangle' ||
+                            (selectedShape === 'circle' && (
+                                <div className="relative">
+                                    <Button
+                                        aria-label="fill"
+                                        className="relative"
+                                    >
+                                        <input
+                                            type="color"
+                                            onChange={handleFillColorChange}
+                                            className="absolute inset-0 cursor-pointer opacity-0"
+                                        />
+                                        <PaintBucket className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
                         <div className="relative">
                             <Button
                                 aria-label="stroke-color"
@@ -1893,18 +1894,22 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
-                        <TextSizeButtons
-                            textMode={textMode}
-                            moveMode={moveMode}
-                            selectedShape={selectedShape}
-                            selectedTextId={selectedTextId}
-                            newTextSize={newTextSize}
-                            textElements={textElements}
-                            selectedId={selectedId}
-                            setTextElements={setTextElements}
-                            addToHistory={addToHistory}
-                            setNewTextSize={setNewTextSize}
-                        />
+                        {moveMode && (
+                            <TextSizeButtons
+                                className="hidden gap-2 sm:flex"
+                                textMode={textMode}
+                                moveMode={moveMode}
+                                selectedShape={selectedShape}
+                                selectedTextId={selectedTextId}
+                                newTextSize={newTextSize}
+                                textElements={textElements}
+                                selectedId={selectedId}
+                                setTextElements={setTextElements}
+                                addToHistory={addToHistory}
+                                setNewTextSize={setNewTextSize}
+                            />
+                        )}
+
                         <StrokeWidth
                             strokeWidth={strokeWidth}
                             onStrokeWidthChange={setStrokeWidth}
@@ -1919,6 +1924,23 @@ export default function InfiniteCanvas() {
                         strokeWidth={strokeWidth}
                     />
                 </div>
+            </div>
+            <div className="fixed bottom-16 right-4 z-20 block sm:hidden">
+                {moveMode && (
+                    <TextSizeButtons
+                        className="flex flex-col items-center gap-2 sm:hidden"
+                        textMode={textMode}
+                        moveMode={moveMode}
+                        selectedShape={selectedShape}
+                        selectedTextId={selectedTextId}
+                        newTextSize={newTextSize}
+                        textElements={textElements}
+                        selectedId={selectedId}
+                        setTextElements={setTextElements}
+                        addToHistory={addToHistory}
+                        setNewTextSize={setNewTextSize}
+                    />
+                )}
             </div>
             <div className="fixed bottom-4 left-4 z-20 flex gap-2">
                 <Button
