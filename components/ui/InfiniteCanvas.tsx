@@ -1819,7 +1819,7 @@ export default function InfiniteCanvas() {
                                             selectedShape
                                         ) {
                                             switch (selectedShape) {
-                                                case 'line':
+                                                case 'line': {
                                                     const newLines = [...lines];
                                                     const lineIndex =
                                                         parseInt(selectedId);
@@ -1830,7 +1830,9 @@ export default function InfiniteCanvas() {
                                                     setLines(newLines);
                                                     addToHistory(newLines);
                                                     break;
-                                                case 'rectangle':
+                                                }
+
+                                                case 'rectangle': {
                                                     const newRectangles = [
                                                         ...rectangles,
                                                     ];
@@ -1847,7 +1849,9 @@ export default function InfiniteCanvas() {
                                                     );
                                                     addToHistory(newRectangles);
                                                     break;
-                                                case 'circle':
+                                                }
+
+                                                case 'circle': {
                                                     const newCircles = [
                                                         ...circles,
                                                     ];
@@ -1862,6 +1866,7 @@ export default function InfiniteCanvas() {
                                                     setCircles(newCircles);
                                                     addToHistory(newCircles);
                                                     break;
+                                                }
                                             }
                                         }
                                     }}
