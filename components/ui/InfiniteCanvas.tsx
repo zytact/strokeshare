@@ -1349,6 +1349,7 @@ export default function InfiniteCanvas() {
             id: newId,
         };
 
+        // Just add the text element to state without adding to history
         setTextElements([...textElements, newText]);
         setSelectedTextId(newId);
         setEditingText('');
@@ -1974,7 +1975,10 @@ export default function InfiniteCanvas() {
                         setSelectedTextId(null);
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
-                        addToHistory(updatedTexts);
+                        // Only add to history if text was actually entered
+                        if (editingText && editingText.trim() !== '') {
+                            addToHistory(updatedTexts);
+                        }
                         disableAllModes();
                     }
                 }}
@@ -1984,11 +1988,21 @@ export default function InfiniteCanvas() {
                             ? { ...t, text: editingText || '' }
                             : t,
                     );
-                    setTextElements(updatedTexts);
+                    // Remove empty text elements
+                    const filteredTexts = updatedTexts.filter(
+                        (t) => t.text.trim() !== '',
+                    );
+                    setTextElements(filteredTexts);
                     setSelectedTextId(null);
                     setEditingText(null);
                     textareaRef.current!.style.display = 'none';
-                    addToHistory(updatedTexts);
+                    // Only add to history if there were actual changes
+                    if (
+                        filteredTexts.length !== textElements.length ||
+                        editingText?.trim()
+                    ) {
+                        addToHistory(filteredTexts);
+                    }
                 }}
                 value={editingText || ''}
             />
