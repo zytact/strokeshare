@@ -15,6 +15,7 @@ export function Help() {
             <PopoverTrigger asChild>
                 <Button
                     variant="default"
+                    aria-label="Show help and keyboard shortcuts"
                     className="flex w-9 items-center gap-2"
                 >
                     <CircleHelp className="h-4 w-4" />
@@ -26,6 +27,7 @@ export function Help() {
                         <Link
                             href="https://github.com/zytact/strokeshare"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="mt-1"
                         >
                             <Github className="h-4 w-4" />
@@ -34,6 +36,7 @@ export function Help() {
                         <Link
                             href="https://zytact.in"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="font-semibold"
                         >
                             Arnab

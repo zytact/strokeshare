@@ -4,7 +4,7 @@ A minimal web-based whiteboarding tool for quickly creating sketches and diagram
 
 ## Why?
 
-This is similar to [Excalidraw](https://excalidraw.com). I wanted to work learn by doing and whiteboarding with Excalidraw is a common thing for me. So I thought, why not?
+This is similar to [Excalidraw](https://excalidraw.com). I wanted to learn by doing and whiteboarding with Excalidraw is a common thing for me. So I thought, why not?
 
 ## Development
 
