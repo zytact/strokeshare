@@ -9,7 +9,7 @@ interface TextSizeButtonsProps {
     textElements: TextElement[];
     selectedId: string | null;
     setTextElements: (elements: TextElement[]) => void;
-    addToHistory: (state: any) => void;
+    addToHistory: (state: TextElement[]) => void;
     setNewTextSize: (size: number) => void;
 }
 
