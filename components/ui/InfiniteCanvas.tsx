@@ -37,6 +37,7 @@ import { useCanvasStore } from '@/store/useCanvasStore';
 import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
+import { Help } from '@/components/ui/Help';
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
@@ -1927,6 +1928,9 @@ export default function InfiniteCanvas() {
                     strokeWidth={strokeWidth}
                     className="hidden sm:block"
                 />
+            </div>
+            <div className="fixed bottom-4 right-4 z-20 hidden sm:block">
+                <Help />
             </div>
             <textarea
                 ref={textareaRef}
