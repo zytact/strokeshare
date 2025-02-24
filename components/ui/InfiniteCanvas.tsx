@@ -1780,85 +1780,99 @@ export default function InfiniteCanvas() {
                         <SquareDashed className="h-4 w-4" />
                     </Button>
                 </div>
-                <div className="relative">
-                    <Button
-                        aria-label="fill"
-                        className="relative"
-                        disabled={
-                            !moveMode ||
-                            (selectedShape !== 'rectangle' &&
-                                selectedShape !== 'circle')
-                        }
-                    >
-                        <input
-                            type="color"
-                            onChange={handleFillColorChange}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            disabled={
-                                !moveMode ||
-                                (selectedShape !== 'rectangle' &&
-                                    selectedShape !== 'circle')
-                            }
-                        />
-                        <PaintBucket className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div className="relative">
-                    <Button
-                        aria-label="stroke-color"
-                        className="relative"
-                        disabled={!moveMode || !selectedShape}
-                    >
-                        <input
-                            type="color"
-                            onChange={(e) => {
-                                const newColor = e.target.value;
-                                if (moveMode && selectedId && selectedShape) {
-                                    switch (selectedShape) {
-                                        case 'line':
-                                            const newLines = [...lines];
-                                            const lineIndex =
-                                                parseInt(selectedId);
-                                            newLines[lineIndex] = {
-                                                ...newLines[lineIndex],
-                                                color: newColor,
-                                            };
-                                            setLines(newLines);
-                                            addToHistory(newLines);
-                                            break;
-                                        case 'rectangle':
-                                            const newRectangles = [
-                                                ...rectangles,
-                                            ];
-                                            const rectIndex =
-                                                parseInt(selectedId);
-                                            newRectangles[rectIndex] = {
-                                                ...newRectangles[rectIndex],
-                                                color: newColor,
-                                            };
-                                            setRectangles(newRectangles);
-                                            addToHistory(newRectangles);
-                                            break;
-                                        case 'circle':
-                                            const newCircles = [...circles];
-                                            const circleIndex =
-                                                parseInt(selectedId);
-                                            newCircles[circleIndex] = {
-                                                ...newCircles[circleIndex],
-                                                color: newColor,
-                                            };
-                                            setCircles(newCircles);
-                                            addToHistory(newCircles);
-                                            break;
-                                    }
+                {moveMode && (
+                    <>
+                        <div className="relative">
+                            <Button
+                                aria-label="fill"
+                                className="relative"
+                                disabled={
+                                    selectedShape !== 'rectangle' &&
+                                    selectedShape !== 'circle'
                                 }
-                            }}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            disabled={!moveMode || !selectedShape}
-                        />
-                        <Palette className="h-4 w-4" />
-                    </Button>
-                </div>
+                            >
+                                <input
+                                    type="color"
+                                    onChange={handleFillColorChange}
+                                    className="absolute inset-0 cursor-pointer opacity-0"
+                                    disabled={
+                                        selectedShape !== 'rectangle' &&
+                                        selectedShape !== 'circle'
+                                    }
+                                />
+                                <PaintBucket className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="relative">
+                            <Button
+                                aria-label="stroke-color"
+                                className="relative"
+                                disabled={!selectedShape}
+                            >
+                                <input
+                                    type="color"
+                                    onChange={(e) => {
+                                        const newColor = e.target.value;
+                                        if (
+                                            moveMode &&
+                                            selectedId &&
+                                            selectedShape
+                                        ) {
+                                            switch (selectedShape) {
+                                                case 'line':
+                                                    const newLines = [...lines];
+                                                    const lineIndex =
+                                                        parseInt(selectedId);
+                                                    newLines[lineIndex] = {
+                                                        ...newLines[lineIndex],
+                                                        color: newColor,
+                                                    };
+                                                    setLines(newLines);
+                                                    addToHistory(newLines);
+                                                    break;
+                                                case 'rectangle':
+                                                    const newRectangles = [
+                                                        ...rectangles,
+                                                    ];
+                                                    const rectIndex =
+                                                        parseInt(selectedId);
+                                                    newRectangles[rectIndex] = {
+                                                        ...newRectangles[
+                                                            rectIndex
+                                                        ],
+                                                        color: newColor,
+                                                    };
+                                                    setRectangles(
+                                                        newRectangles,
+                                                    );
+                                                    addToHistory(newRectangles);
+                                                    break;
+                                                case 'circle':
+                                                    const newCircles = [
+                                                        ...circles,
+                                                    ];
+                                                    const circleIndex =
+                                                        parseInt(selectedId);
+                                                    newCircles[circleIndex] = {
+                                                        ...newCircles[
+                                                            circleIndex
+                                                        ],
+                                                        color: newColor,
+                                                    };
+                                                    setCircles(newCircles);
+                                                    addToHistory(newCircles);
+                                                    break;
+                                            }
+                                        }
+                                    }}
+                                    className="absolute inset-0 cursor-pointer opacity-0"
+                                    disabled={!selectedShape}
+                                />
+                                <Palette className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </>
+                )}
                 {!eraserMode && (
                     <>
                         <div>
