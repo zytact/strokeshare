@@ -1,3 +1,0 @@
-Fix README
-Add About
-Update zytact.in
