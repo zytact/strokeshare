@@ -38,6 +38,7 @@ import { StrokeWidth } from '@/components/ui/StrokeWidth';
 import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
 import { Help } from '@/components/ui/Help';
+import { TextSizeButtons } from '@/components/ui/TextSizeButtons';
 
 const getTextRotation = (textNode: Konva.Text) => {
     // Get absolute rotation including all parent rotations
@@ -1872,167 +1873,18 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
-                        {(textMode ||
-                            (moveMode && selectedShape === 'text')) && (
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant={
-                                        (textMode &&
-                                            ((!selectedTextId &&
-                                                newTextSize === 20) ||
-                                                (selectedTextId &&
-                                                    textElements.find(
-                                                        (t) =>
-                                                            t.id ===
-                                                            selectedTextId,
-                                                    )?.fontSize === 20))) ||
-                                        (moveMode &&
-                                            selectedShape === 'text' &&
-                                            textElements.find(
-                                                (t) => t.id === selectedId,
-                                            )?.fontSize === 20)
-                                            ? 'secondary'
-                                            : 'default'
-                                    }
-                                    onClick={() => {
-                                        if (textMode && selectedTextId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedTextId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 20,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                        } else if (textMode) {
-                                            setNewTextSize(20);
-                                        }
-                                        if (moveMode && selectedId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 20,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                            addToHistory(newTextElements);
-                                        }
-                                    }}
-                                    disabled={moveMode && !selectedShape}
-                                >
-                                    S
-                                </Button>
-                                <Button
-                                    variant={
-                                        (textMode &&
-                                            ((!selectedTextId &&
-                                                newTextSize === 30) ||
-                                                (selectedTextId &&
-                                                    textElements.find(
-                                                        (t) =>
-                                                            t.id ===
-                                                            selectedTextId,
-                                                    )?.fontSize === 30))) ||
-                                        (moveMode &&
-                                            selectedShape === 'text' &&
-                                            textElements.find(
-                                                (t) => t.id === selectedId,
-                                            )?.fontSize === 30)
-                                            ? 'secondary'
-                                            : 'default'
-                                    }
-                                    onClick={() => {
-                                        if (textMode && selectedTextId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedTextId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 30,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                        } else if (textMode) {
-                                            setNewTextSize(30);
-                                        }
-                                        if (moveMode && selectedId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 30,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                            addToHistory(newTextElements);
-                                        }
-                                    }}
-                                    disabled={moveMode && !selectedShape}
-                                >
-                                    M
-                                </Button>
-                                <Button
-                                    variant={
-                                        (textMode &&
-                                            ((!selectedTextId &&
-                                                newTextSize === 40) ||
-                                                (selectedTextId &&
-                                                    textElements.find(
-                                                        (t) =>
-                                                            t.id ===
-                                                            selectedTextId,
-                                                    )?.fontSize === 40))) ||
-                                        (moveMode &&
-                                            selectedShape === 'text' &&
-                                            textElements.find(
-                                                (t) => t.id === selectedId,
-                                            )?.fontSize === 40)
-                                            ? 'secondary'
-                                            : 'default'
-                                    }
-                                    onClick={() => {
-                                        if (textMode && selectedTextId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedTextId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 40,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                        } else if (textMode) {
-                                            setNewTextSize(40);
-                                        }
-                                        if (moveMode && selectedId) {
-                                            const newTextElements =
-                                                textElements.map((text) =>
-                                                    text.id === selectedId
-                                                        ? {
-                                                              ...text,
-                                                              fontSize: 40,
-                                                          }
-                                                        : text,
-                                                );
-                                            setTextElements(newTextElements);
-                                            addToHistory(newTextElements);
-                                        }
-                                    }}
-                                    disabled={moveMode && !selectedShape}
-                                >
-                                    L
-                                </Button>
-                            </div>
-                        )}
+                        <TextSizeButtons
+                            textMode={textMode}
+                            moveMode={moveMode}
+                            selectedShape={selectedShape}
+                            selectedTextId={selectedTextId}
+                            newTextSize={newTextSize}
+                            textElements={textElements}
+                            selectedId={selectedId}
+                            setTextElements={setTextElements}
+                            addToHistory={addToHistory}
+                            setNewTextSize={setNewTextSize}
+                        />
                         <StrokeWidth
                             strokeWidth={strokeWidth}
                             onStrokeWidthChange={setStrokeWidth}
