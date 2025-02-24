@@ -1343,7 +1343,7 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: 30,
+            fontSize: newTextSize, // Use the selected size
             fill: currentColor,
             id: newId,
         };
@@ -1571,6 +1571,8 @@ export default function InfiniteCanvas() {
         stageScale,
         setImages,
     ]);
+
+    const [newTextSize, setNewTextSize] = useState(30);
 
     return (
         <>
@@ -1870,6 +1872,167 @@ export default function InfiniteCanvas() {
                                 />
                             </Button>
                         </div>
+                        {(textMode ||
+                            (moveMode && selectedShape === 'text')) && (
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant={
+                                        (textMode &&
+                                            ((!selectedTextId &&
+                                                newTextSize === 20) ||
+                                                (selectedTextId &&
+                                                    textElements.find(
+                                                        (t) =>
+                                                            t.id ===
+                                                            selectedTextId,
+                                                    )?.fontSize === 20))) ||
+                                        (moveMode &&
+                                            selectedShape === 'text' &&
+                                            textElements.find(
+                                                (t) => t.id === selectedId,
+                                            )?.fontSize === 20)
+                                            ? 'secondary'
+                                            : 'default'
+                                    }
+                                    onClick={() => {
+                                        if (textMode && selectedTextId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedTextId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 20,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                        } else if (textMode) {
+                                            setNewTextSize(20);
+                                        }
+                                        if (moveMode && selectedId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 20,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                            addToHistory(newTextElements);
+                                        }
+                                    }}
+                                    disabled={moveMode && !selectedShape}
+                                >
+                                    S
+                                </Button>
+                                <Button
+                                    variant={
+                                        (textMode &&
+                                            ((!selectedTextId &&
+                                                newTextSize === 30) ||
+                                                (selectedTextId &&
+                                                    textElements.find(
+                                                        (t) =>
+                                                            t.id ===
+                                                            selectedTextId,
+                                                    )?.fontSize === 30))) ||
+                                        (moveMode &&
+                                            selectedShape === 'text' &&
+                                            textElements.find(
+                                                (t) => t.id === selectedId,
+                                            )?.fontSize === 30)
+                                            ? 'secondary'
+                                            : 'default'
+                                    }
+                                    onClick={() => {
+                                        if (textMode && selectedTextId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedTextId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 30,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                        } else if (textMode) {
+                                            setNewTextSize(30);
+                                        }
+                                        if (moveMode && selectedId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 30,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                            addToHistory(newTextElements);
+                                        }
+                                    }}
+                                    disabled={moveMode && !selectedShape}
+                                >
+                                    M
+                                </Button>
+                                <Button
+                                    variant={
+                                        (textMode &&
+                                            ((!selectedTextId &&
+                                                newTextSize === 40) ||
+                                                (selectedTextId &&
+                                                    textElements.find(
+                                                        (t) =>
+                                                            t.id ===
+                                                            selectedTextId,
+                                                    )?.fontSize === 40))) ||
+                                        (moveMode &&
+                                            selectedShape === 'text' &&
+                                            textElements.find(
+                                                (t) => t.id === selectedId,
+                                            )?.fontSize === 40)
+                                            ? 'secondary'
+                                            : 'default'
+                                    }
+                                    onClick={() => {
+                                        if (textMode && selectedTextId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedTextId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 40,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                        } else if (textMode) {
+                                            setNewTextSize(40);
+                                        }
+                                        if (moveMode && selectedId) {
+                                            const newTextElements =
+                                                textElements.map((text) =>
+                                                    text.id === selectedId
+                                                        ? {
+                                                              ...text,
+                                                              fontSize: 40,
+                                                          }
+                                                        : text,
+                                                );
+                                            setTextElements(newTextElements);
+                                            addToHistory(newTextElements);
+                                        }
+                                    }}
+                                    disabled={moveMode && !selectedShape}
+                                >
+                                    L
+                                </Button>
+                            </div>
+                        )}
                         <StrokeWidth
                             strokeWidth={strokeWidth}
                             onStrokeWidthChange={setStrokeWidth}
@@ -1938,8 +2101,14 @@ export default function InfiniteCanvas() {
                 style={{
                     color: currentColor,
                     lineHeight: '1.2',
+                    fontSize: `${
+                        selectedTextId
+                            ? textElements.find((t) => t.id === selectedTextId)
+                                  ?.fontSize
+                            : newTextSize
+                    }px`,
                 }}
-                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont text-3xl outline-none"
+                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont outline-none"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1953,7 +2122,7 @@ export default function InfiniteCanvas() {
                         setSelectedTextId(null);
                         setEditingText(null);
                         textareaRef.current!.style.display = 'none';
-                        addToHistory(lines);
+                        addToHistory(updatedTexts);
                         disableAllModes();
                     }
                 }}
@@ -1967,7 +2136,7 @@ export default function InfiniteCanvas() {
                     setSelectedTextId(null);
                     setEditingText(null);
                     textareaRef.current!.style.display = 'none';
-                    addToHistory(lines);
+                    addToHistory(updatedTexts);
                 }}
                 value={editingText || ''}
             />
