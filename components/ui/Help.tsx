@@ -7,7 +7,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CircleHelp, Github, Link as WebLink } from 'lucide-react';
+import { CircleHelp, Github } from 'lucide-react';
 
 export function Help() {
     return (
