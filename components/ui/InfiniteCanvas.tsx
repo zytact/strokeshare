@@ -1073,7 +1073,7 @@ export default function InfiniteCanvas() {
                 x: stagePoint.x,
                 y: stagePoint.y,
                 text: '',
-                fontSize: 30,
+                fontSize: newTextSize, // Use newTextSize instead of hardcoded value
                 fill: currentColor,
                 id: newId,
             };
@@ -1091,6 +1091,7 @@ export default function InfiniteCanvas() {
             textarea.style.display = 'block';
             textarea.style.width = '80%';
             textarea.style.height = 'auto';
+            textarea.style.fontSize = `${newTextSize}px`; // Update textarea font size
             textarea.focus();
         }
     };
@@ -1344,17 +1345,15 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: newTextSize, // Use the selected size
+            fontSize: newTextSize, // Use newTextSize instead of hardcoded value
             fill: currentColor,
             id: newId,
         };
 
-        // Just add the text element to state without adding to history
         setTextElements([...textElements, newText]);
         setSelectedTextId(newId);
         setEditingText('');
 
-        // Position and show the textarea
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -1362,8 +1361,9 @@ export default function InfiniteCanvas() {
         textarea.style.top = `${point.y}px`;
         textarea.style.left = `${point.x}px`;
         textarea.style.display = 'block';
-        textarea.style.width = `${window.innerWidth - point.x}px`; // Set exact width
-        textarea.style.height = `${window.innerHeight - point.y}px`; // Set exact height
+        textarea.style.width = `${window.innerWidth - point.x}px`;
+        textarea.style.height = `${window.innerHeight - point.y}px`;
+        textarea.style.fontSize = `${newTextSize}px`; // Update textarea font size
         textarea.focus();
     };
 
