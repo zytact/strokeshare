@@ -35,13 +35,33 @@ export default function TextButton({
     addToHistory,
     setNewTextSize,
 }: TextButtonProps) {
+    const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!textMode) {
+            setIsPopoverOpen(false);
+        }
+    }, [textMode]);
+
+    const handleButtonClick = () => {
+        // If we're currently in text mode, just turn it off and keep popover closed
+        if (textMode) {
+            setIsPopoverOpen(false);
+            onClick();
+        } else {
+            // If we're enabling text mode, open the popover and turn on text mode
+            setIsPopoverOpen(true);
+            onClick();
+        }
+    };
+
     return (
-        <Popover>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger asChild>
                 <Button
                     aria-label="text"
                     variant={textMode ? 'secondary' : 'default'}
-                    onClick={onClick}
+                    onClick={handleButtonClick}
                 >
                     <Type className="h-4 w-4" />
                 </Button>
