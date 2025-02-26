@@ -246,6 +246,11 @@ export default function InfiniteCanvas() {
     const [editingText, setEditingText] = useState<string | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const [clipboardItem, setClipboardItem] = useState<{
+        type: 'line' | 'text' | 'rectangle' | 'circle' | 'image';
+        data: DrawLine | TextElement | Rectangle | Circle | Image;
+    } | null>(null);
+
     const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
@@ -360,6 +365,181 @@ export default function InfiniteCanvas() {
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
 
+    // Function to handle paste operation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handleElementPaste = () => {
+        if (!clipboardItem) return;
+
+        // Add a small offset to make the pasted item visible
+        const OFFSET = 20;
+
+        switch (clipboardItem.type) {
+            case 'line': {
+                const newLine = { ...clipboardItem.data } as DrawLine;
+                // Apply offset to points
+                if (
+                    'points' in newLine &&
+                    newLine.points &&
+                    newLine.points.length > 0
+                ) {
+                    const offsetPoints = [...newLine.points];
+                    for (let i = 0; i < offsetPoints.length; i += 2) {
+                        offsetPoints[i] += OFFSET; // x
+                        offsetPoints[i + 1] += OFFSET; // y
+                    }
+                    newLine.points = offsetPoints;
+                }
+                setLines([...lines, newLine]);
+                addToHistory([...lines, newLine]);
+                break;
+            }
+            case 'text': {
+                const textData = clipboardItem.data as TextElement;
+                const newText = {
+                    ...textData,
+                    id: `text-${Date.now()}`,
+                    x: textData.x + OFFSET,
+                    y: textData.y + OFFSET,
+                };
+                setTextElements([...textElements, newText]);
+                addToHistory([...textElements, newText]);
+                break;
+            }
+            case 'rectangle': {
+                const rectData = clipboardItem.data as Rectangle;
+                const newRect = {
+                    ...rectData,
+                    x: rectData.x + OFFSET,
+                    y: rectData.y + OFFSET,
+                };
+                setRectangles([...rectangles, newRect]);
+                addToHistory([...rectangles, newRect]);
+                break;
+            }
+            case 'circle': {
+                const circleData = clipboardItem.data as Circle;
+                const newCircle = {
+                    ...circleData,
+                    x: circleData.x + OFFSET,
+                    y: circleData.y + OFFSET,
+                };
+                setCircles([...circles, newCircle]);
+                addToHistory([...circles, newCircle]);
+                break;
+            }
+            case 'image': {
+                const imageData = clipboardItem.data as Image;
+                const newImage = {
+                    ...imageData,
+                    id: `image-${Date.now()}`,
+                    x: imageData.x + OFFSET,
+                    y: imageData.y + OFFSET,
+                };
+
+                setImages([...images, newImage]);
+                addToHistory([...images, newImage]);
+                break;
+            }
+        }
+
+        // Select the newly pasted item
+        setTimeout(() => {
+            if (stageRef.current) {
+                let pastedNode;
+
+                if (clipboardItem.type === 'line') {
+                    pastedNode = stageRef.current.findOne(
+                        `#line-${lines.length}`,
+                    );
+                    setSelectedId(String(lines.length));
+                } else if (clipboardItem.type === 'text') {
+                    const newTextId = `text-${Date.now()}`;
+                    pastedNode = stageRef.current.findOne(`#${newTextId}`);
+                    setSelectedId(newTextId);
+                } else if (clipboardItem.type === 'rectangle') {
+                    pastedNode = stageRef.current.findOne(
+                        `#rect-${rectangles.length}`,
+                    );
+                    setSelectedId(String(rectangles.length));
+                } else if (clipboardItem.type === 'circle') {
+                    pastedNode = stageRef.current.findOne(
+                        `#circle-${circles.length}`,
+                    );
+                    setSelectedId(String(circles.length));
+                } else if (clipboardItem.type === 'image') {
+                    const newImageId = `image-${Date.now()}`;
+                    pastedNode = stageRef.current.findOne(`#${newImageId}`);
+                    setSelectedId(newImageId);
+                }
+
+                if (pastedNode && transformerRef.current) {
+                    transformerRef.current.nodes([pastedNode]);
+                    transformerRef.current.getLayer()?.batchDraw();
+                    setSelectedShape(clipboardItem.type);
+                }
+            }
+        }, 10);
+    };
+
+    // Function to handle copy operation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handleElementCopy = () => {
+        if (!selectedShape || !selectedId) return;
+
+        switch (selectedShape) {
+            case 'line': {
+                const lineIndex = parseInt(selectedId);
+                if (lines[lineIndex]) {
+                    setClipboardItem({
+                        type: 'line',
+                        data: { ...lines[lineIndex] },
+                    });
+                }
+                break;
+            }
+            case 'text': {
+                const text = textElements.find((t) => t.id === selectedId);
+                if (text) {
+                    setClipboardItem({
+                        type: 'text',
+                        data: { ...text },
+                    });
+                }
+                break;
+            }
+            case 'rectangle': {
+                const rectIndex = parseInt(selectedId);
+                if (rectangles[rectIndex]) {
+                    setClipboardItem({
+                        type: 'rectangle',
+                        data: { ...rectangles[rectIndex] },
+                    });
+                }
+                break;
+            }
+            case 'circle': {
+                const circleIndex = parseInt(selectedId);
+                if (circles[circleIndex]) {
+                    setClipboardItem({
+                        type: 'circle',
+                        data: { ...circles[circleIndex] },
+                    });
+                }
+                break;
+            }
+            case 'image': {
+                const image = images.find((img) => img.id === selectedId);
+                if (image) {
+                    setClipboardItem({
+                        type: 'image',
+                        data: { ...image },
+                    });
+                }
+                break;
+            }
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey) {
@@ -367,13 +547,34 @@ export default function InfiniteCanvas() {
                     undo();
                 } else if (e.key === 'y') {
                     redo();
+                } else if (e.key === 'c') {
+                    // Copy selected element
+                    if (moveMode && selectedId && selectedShape) {
+                        e.preventDefault();
+                        handleElementCopy();
+                    }
+                } else if (e.key === 'v') {
+                    // Paste copied element
+                    if (moveMode && clipboardItem) {
+                        e.preventDefault();
+                        handleElementPaste();
+                    }
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [undo, redo]);
+    }, [
+        undo,
+        redo,
+        moveMode,
+        selectedId,
+        selectedShape,
+        clipboardItem,
+        handleElementCopy,
+        handleElementPaste,
+    ]);
 
     const [stagePos, setStagePos] = useState<Point>({ x: 0, y: 0 });
     const [stageScale, setStageScale] = useState(1);
@@ -1517,7 +1718,7 @@ export default function InfiniteCanvas() {
     };
 
     useEffect(() => {
-        const handlePaste = async (e: ClipboardEvent) => {
+        const handleImagePaste = async (e: ClipboardEvent) => {
             if (e.clipboardData && e.clipboardData.items) {
                 const items = e.clipboardData.items;
                 for (let i = 0; i < items.length; i++) {
@@ -1560,8 +1761,8 @@ export default function InfiniteCanvas() {
             }
         };
 
-        window.addEventListener('paste', handlePaste);
-        return () => window.removeEventListener('paste', handlePaste);
+        window.addEventListener('paste', handleImagePaste);
+        return () => window.removeEventListener('paste', handleImagePaste);
     }, [
         addToHistory,
         dimensions.height,
