@@ -1,18 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Download, Copy } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import Konva from 'konva';
 import { useTheme } from 'next-themes';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useDownloadPopStore } from '@/store/useDownloadPopStore';
 import { useCanvasStore } from '@/store/useCanvasStore';
@@ -32,13 +31,15 @@ export function DownloadPop({
     strokeWidth,
     className,
 }: DownloadPopProps) {
-    const { toast } = useToast();
     const { resolvedTheme } = useTheme();
     const { exportWithBackground, setExportWithBackground } =
         useDownloadPopStore();
 
     const { lines, textElements, rectangles, circles, images } =
         useCanvasStore();
+
+    const [wasCopied, setWasCopied] = useState(false);
+    const [isFading, setIsFading] = useState(false);
 
     const handlePNG = () => {
         if (!stageRef.current) return;
@@ -284,12 +285,31 @@ export function DownloadPop({
                             className="flex items-center gap-2"
                             onClick={() => {
                                 copyImg();
-                                toast({
-                                    title: 'Copied to clipboard',
-                                });
+                                setWasCopied(true);
+                                setIsFading(true);
+                                setTimeout(() => {
+                                    setIsFading(false);
+                                }, 1800);
+                                setTimeout(() => {
+                                    setWasCopied(false);
+                                }, 2000);
                             }}
                         >
-                            <Copy className="h-4 w-4" />
+                            {wasCopied ? (
+                                <Check
+                                    className={cn(
+                                        'h-4 w-4 transition-opacity duration-700',
+                                        isFading ? 'opacity-100' : 'opacity-0',
+                                    )}
+                                />
+                            ) : (
+                                <Copy
+                                    className={cn(
+                                        'h-4 w-4 transition-opacity duration-300',
+                                        wasCopied ? 'opacity-0' : 'opacity-100',
+                                    )}
+                                />
+                            )}
                             <span>Copy</span>
                         </Button>
                         <div className="flex items-center gap-4">
