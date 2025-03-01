@@ -2136,6 +2136,105 @@ export default function InfiniteCanvas() {
                     scale={{ x: stageScale, y: stageScale }}
                 >
                     <Layer data-testid="layer">
+                        {images.map((image) => (
+                            <LoadedImage
+                                key={image.id}
+                                id={`image-${image.id}`} // Ensure consistent ID format
+                                src={image.src}
+                                alt={`User uploaded content ${image.id}`}
+                                x={image.x}
+                                y={image.y}
+                                width={image.width}
+                                height={image.height}
+                                draggable={moveMode}
+                                onClick={(e: KonvaEventObject<Event>) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
+                                        }
+                                    }
+                                }}
+                                onTouchStart={(
+                                    e: KonvaEventObject<TouchEvent>,
+                                ) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
+                                        }
+                                    }
+                                }}
+                                onTransformEnd={(
+                                    e: KonvaEventObject<Event>,
+                                ) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+
+                                    const newImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                                  width: node.width() * scaleX,
+                                                  height:
+                                                      node.height() * scaleY,
+                                              }
+                                            : img,
+                                    );
+
+                                    setImages(newImages);
+                                    addToHistory(newImages);
+                                }}
+                                onDragMove={(e: KonvaEventObject<Event>) => {
+                                    const node = e.target;
+                                    const updatedImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                              }
+                                            : img,
+                                    );
+                                    setImages(updatedImages);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(images);
+                                }}
+                            />
+                        ))}
                         {lines.map((line, i) => (
                             <Line
                                 data-testid="line"
@@ -2515,105 +2614,6 @@ export default function InfiniteCanvas() {
                                 }}
                                 onDragEnd={() => {
                                     addToHistory(textElements);
-                                }}
-                            />
-                        ))}
-                        {images.map((image) => (
-                            <LoadedImage
-                                key={image.id}
-                                id={`image-${image.id}`} // Ensure consistent ID format
-                                src={image.src}
-                                alt={`User uploaded content ${image.id}`}
-                                x={image.x}
-                                y={image.y}
-                                width={image.width}
-                                height={image.height}
-                                draggable={moveMode}
-                                onClick={(e: KonvaEventObject<Event>) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
-                                }}
-                                onTouchStart={(
-                                    e: KonvaEventObject<TouchEvent>,
-                                ) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
-                                }}
-                                onTransformEnd={(
-                                    e: KonvaEventObject<Event>,
-                                ) => {
-                                    const node = e.target;
-                                    const scaleX = node.scaleX();
-                                    const scaleY = node.scaleY();
-
-                                    node.scaleX(1);
-                                    node.scaleY(1);
-
-                                    const newImages = images.map((img) =>
-                                        img.id === image.id
-                                            ? {
-                                                  ...img,
-                                                  x: node.x(),
-                                                  y: node.y(),
-                                                  width: node.width() * scaleX,
-                                                  height:
-                                                      node.height() * scaleY,
-                                              }
-                                            : img,
-                                    );
-
-                                    setImages(newImages);
-                                    addToHistory(newImages);
-                                }}
-                                onDragMove={(e: KonvaEventObject<Event>) => {
-                                    const node = e.target;
-                                    const updatedImages = images.map((img) =>
-                                        img.id === image.id
-                                            ? {
-                                                  ...img,
-                                                  x: node.x(),
-                                                  y: node.y(),
-                                              }
-                                            : img,
-                                    );
-                                    setImages(updatedImages);
-                                }}
-                                onDragEnd={() => {
-                                    addToHistory(images);
                                 }}
                             />
                         ))}
