@@ -38,7 +38,7 @@ import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
 import { Help } from '@/components/ui/Help';
 import { TextSizeButtons } from '@/components/ui/TextSizeButtons';
-import TextButton from './TextButton';
+import TextButton from '@/components/ui/TextButton';
 import {
     isPointNearText,
     isPointNearRectangle,
@@ -46,27 +46,7 @@ import {
     isPointNearImage,
 } from '@/lib/eraserUtils';
 
-const getTextRotation = (textNode: Konva.Text) => {
-    // Get absolute rotation including all parent rotations
-    let rotation = textNode.rotation();
-    let parent = textNode.parent;
-    while (parent) {
-        rotation += parent.rotation();
-        parent = parent.parent;
-    }
-    return rotation;
-};
-
-const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
-    // Get absolute position
-    const absPos = textNode.absolutePosition();
-
-    // Convert to relative position considering stage transform
-    return {
-        x: (absPos.x - stage.x()) / stage.scaleX(),
-        y: (absPos.y - stage.y()) / stage.scaleY(),
-    };
-};
+import { getTextRotation, getTextPosition } from '@/lib/textUtils';
 
 interface LoadedImageProps
     extends Omit<React.ComponentProps<typeof Image>, 'image'> {
