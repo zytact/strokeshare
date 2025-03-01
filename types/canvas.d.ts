@@ -50,3 +50,5 @@ interface Image {
     src: string;
     id: string;
 }
+
+type ShapeType = 'line' | 'text' | 'rectangle' | 'circle' | 'image';
