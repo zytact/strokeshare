@@ -1,0 +1,568 @@
+import { Button } from './button';
+import TextButton from './TextButton';
+import Konva from 'konva';
+import {
+    Hand,
+    Eraser,
+    MoveUpLeft,
+    Redo2,
+    Undo2,
+    ZoomIn,
+    ZoomOut,
+    Minus as LineIcon,
+    ArrowRight,
+    SquareDashed,
+    Square,
+    PaintBucket,
+    Palette,
+    Circle as CircleIcon,
+    Image as ImageIcon,
+} from 'lucide-react';
+import { TextSizeButtons } from './TextSizeButtons';
+import { StrokeWidth } from './StrokeWidth';
+import { DownloadPop } from './DownloadPop';
+import { Help } from './Help';
+import { useCanvasStore } from '@/store/useCanvasStore';
+import {
+    getSelectedLine,
+    getSelectedCircle,
+    getSelectedRect,
+} from '@/lib/selectShapeUtils';
+
+interface CanvasButtonsProps {
+    dragModeEnabled: boolean;
+    setDragModeEnabled: (enabled: boolean) => void;
+    moveMode: boolean;
+    setMoveMode: (enabled: boolean) => void;
+    eraserMode: boolean;
+    setEraserMode: (enabled: boolean) => void;
+    textMode: boolean;
+    setTextMode: (enabled: boolean) => void;
+    lineSegmentMode: boolean;
+    setLineSegmentMode: (enabled: boolean) => void;
+    arrowMode: boolean;
+    setArrowMode: (enabled: boolean) => void;
+    rectangleMode: boolean;
+    setRectangleMode: (enabled: boolean) => void;
+    circleMode: boolean;
+    setCircleMode: (enabled: boolean) => void;
+    dashedMode: boolean;
+    setDashedMode: (enabled: boolean) => void;
+    handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleFillColorChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleZoom: (zoomIn: boolean) => void;
+    stagePos: { x: number; y: number };
+    stageRef: React.RefObject<Konva.Stage | null>;
+    stageScale: number;
+    strokeWidth: number;
+    setCurrentColor: (color: string) => void;
+    currentColor: string;
+    textElements: TextElement[];
+    setTextElements: (elements: TextElement[]) => void;
+    addToHistory: (
+        elements: TextElement[] | DrawLine[] | Rectangle[] | Circle[],
+    ) => void;
+    newTextSize: number;
+    setNewTextSize: (size: number) => void;
+    selectedShape: ShapeType | null;
+    selectedTextId: string | null;
+    selectedId: string | null;
+    lines: DrawLine[];
+    setLines: (lines: DrawLine[]) => void;
+    rectangles: Rectangle[];
+    setRectangles: (rectangles: Rectangle[]) => void;
+    circles: Circle[];
+    setCircles: (circles: Circle[]) => void;
+    disableAllModes: () => void;
+    setStrokeWidth: (width: number) => void;
+}
+
+export default function CanvasButtons({
+    dragModeEnabled,
+    setDragModeEnabled,
+    moveMode,
+    setMoveMode,
+    eraserMode,
+    setEraserMode,
+    textMode,
+    setTextMode,
+    lineSegmentMode,
+    setLineSegmentMode,
+    arrowMode,
+    setArrowMode,
+    rectangleMode,
+    setRectangleMode,
+    circleMode,
+    setCircleMode,
+    dashedMode,
+    setDashedMode,
+    handleImageUpload,
+    handleFillColorChange,
+    handleZoom,
+    stagePos,
+    stageRef,
+    stageScale,
+    strokeWidth,
+    setCurrentColor,
+    currentColor,
+    textElements,
+    setTextElements,
+    addToHistory,
+    newTextSize,
+    setNewTextSize,
+    selectedShape,
+    selectedTextId,
+    selectedId,
+    lines,
+    setLines,
+    rectangles,
+    setRectangles,
+    circles,
+    setCircles,
+    disableAllModes,
+    setStrokeWidth,
+}: CanvasButtonsProps) {
+    const { canRedo, canUndo, undo, redo } = useCanvasStore();
+    return (
+        <>
+            <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
+                <div>
+                    <Button
+                        aria-label="hand"
+                        variant={dragModeEnabled ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (dragModeEnabled) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setDragModeEnabled(true);
+                            }
+                        }}
+                    >
+                        <Hand className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="move"
+                        variant={moveMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (moveMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setMoveMode(true);
+                            }
+                        }}
+                    >
+                        <MoveUpLeft className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="eraser"
+                        variant={eraserMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (eraserMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setEraserMode(true);
+                            }
+                        }}
+                    >
+                        <Eraser className="h-4 w-4" />{' '}
+                    </Button>
+                </div>
+                <div>
+                    <TextButton
+                        textMode={textMode}
+                        moveMode={moveMode}
+                        selectedShape={selectedShape}
+                        selectedTextId={selectedTextId}
+                        newTextSize={newTextSize}
+                        textElements={textElements}
+                        selectedId={selectedId}
+                        setTextElements={setTextElements}
+                        addToHistory={addToHistory}
+                        setNewTextSize={setNewTextSize}
+                        onClick={() => {
+                            if (textMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setTextMode(true);
+                            }
+                        }}
+                    />
+                </div>
+                <div>
+                    <Button
+                        aria-label="line-segment"
+                        variant={lineSegmentMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (lineSegmentMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setLineSegmentMode(true);
+                            }
+                        }}
+                    >
+                        <LineIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="arrow"
+                        variant={arrowMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (arrowMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setArrowMode(true);
+                            }
+                        }}
+                    >
+                        <ArrowRight className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="rectangle"
+                        variant={rectangleMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (rectangleMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setRectangleMode(true);
+                            }
+                        }}
+                    >
+                        <Square className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="circle"
+                        variant={circleMode ? 'secondary' : 'default'}
+                        onClick={() => {
+                            if (circleMode) {
+                                disableAllModes();
+                            } else {
+                                disableAllModes();
+                                setCircleMode(true);
+                            }
+                        }}
+                    >
+                        <CircleIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="relative">
+                    <Button aria-label="upload-image" className="relative">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                        />
+                        <ImageIcon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div>
+                    <Button
+                        aria-label="dashed-line"
+                        variant={
+                            moveMode &&
+                            (getSelectedLine(selectedId, selectedShape, lines)
+                                ?.isDashed ||
+                                getSelectedRect(
+                                    selectedId,
+                                    selectedShape,
+                                    rectangles,
+                                )?.isDashed ||
+                                getSelectedCircle(
+                                    selectedId,
+                                    selectedShape,
+                                    circles,
+                                )?.isDashed)
+                                ? 'secondary'
+                                : dashedMode
+                                  ? 'secondary'
+                                  : 'default'
+                        }
+                        onClick={() => {
+                            if (moveMode && selectedId) {
+                                switch (selectedShape) {
+                                    case 'line':
+                                        const newLines = [...lines];
+                                        const lineIndex = parseInt(selectedId);
+                                        newLines[lineIndex] = {
+                                            ...newLines[lineIndex],
+                                            isDashed:
+                                                !newLines[lineIndex].isDashed,
+                                        };
+                                        setLines(newLines);
+                                        addToHistory(newLines);
+                                        break;
+                                    case 'rectangle':
+                                        const newRectangles = [...rectangles];
+                                        const rectIndex = parseInt(selectedId);
+                                        newRectangles[rectIndex] = {
+                                            ...newRectangles[rectIndex],
+                                            isDashed:
+                                                !newRectangles[rectIndex]
+                                                    .isDashed,
+                                        };
+                                        setRectangles(newRectangles);
+                                        addToHistory(newRectangles);
+                                        break;
+                                    case 'circle':
+                                        const newCircles = [...circles];
+                                        const circleIndex =
+                                            parseInt(selectedId);
+                                        newCircles[circleIndex] = {
+                                            ...newCircles[circleIndex],
+                                            isDashed:
+                                                !newCircles[circleIndex]
+                                                    .isDashed,
+                                        };
+                                        setCircles(newCircles);
+                                        addToHistory(newCircles);
+                                        break;
+                                }
+                            } else {
+                                // Toggle global dash mode
+                                setDashedMode(!dashedMode);
+                            }
+                        }}
+                    >
+                        <SquareDashed className="h-4 w-4" />
+                    </Button>
+                </div>
+                {moveMode && (
+                    <>
+                        {selectedShape === 'rectangle' ||
+                            (selectedShape === 'circle' && (
+                                <div className="relative">
+                                    <Button
+                                        aria-label="fill"
+                                        className="relative"
+                                    >
+                                        <input
+                                            type="color"
+                                            onChange={handleFillColorChange}
+                                            className="absolute inset-0 cursor-pointer opacity-0"
+                                        />
+                                        <PaintBucket className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        <div className="relative">
+                            <Button
+                                aria-label="stroke-color"
+                                className="relative"
+                                disabled={!selectedShape}
+                            >
+                                <input
+                                    type="color"
+                                    onChange={(e) => {
+                                        const newColor = e.target.value;
+                                        if (
+                                            moveMode &&
+                                            selectedId &&
+                                            selectedShape
+                                        ) {
+                                            switch (selectedShape) {
+                                                case 'line': {
+                                                    const newLines = [...lines];
+                                                    const lineIndex =
+                                                        parseInt(selectedId);
+                                                    newLines[lineIndex] = {
+                                                        ...newLines[lineIndex],
+                                                        color: newColor,
+                                                    };
+                                                    setLines(newLines);
+                                                    addToHistory(newLines);
+                                                    break;
+                                                }
+
+                                                case 'rectangle': {
+                                                    const newRectangles = [
+                                                        ...rectangles,
+                                                    ];
+                                                    const rectIndex =
+                                                        parseInt(selectedId);
+                                                    newRectangles[rectIndex] = {
+                                                        ...newRectangles[
+                                                            rectIndex
+                                                        ],
+                                                        color: newColor,
+                                                    };
+                                                    setRectangles(
+                                                        newRectangles,
+                                                    );
+                                                    addToHistory(newRectangles);
+                                                    break;
+                                                }
+
+                                                case 'circle': {
+                                                    const newCircles = [
+                                                        ...circles,
+                                                    ];
+                                                    const circleIndex =
+                                                        parseInt(selectedId);
+                                                    newCircles[circleIndex] = {
+                                                        ...newCircles[
+                                                            circleIndex
+                                                        ],
+                                                        color: newColor,
+                                                    };
+                                                    setCircles(newCircles);
+                                                    addToHistory(newCircles);
+                                                    break;
+                                                }
+                                                case 'text': {
+                                                    const newTextElements =
+                                                        textElements.map((t) =>
+                                                            t.id === selectedId
+                                                                ? {
+                                                                      ...t,
+                                                                      fill: newColor,
+                                                                  }
+                                                                : t,
+                                                        );
+                                                    setTextElements(
+                                                        newTextElements,
+                                                    );
+                                                    addToHistory(
+                                                        newTextElements,
+                                                    );
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    className="absolute inset-0 cursor-pointer opacity-0"
+                                    disabled={!selectedShape}
+                                />
+                                <Palette className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </>
+                )}
+                {!eraserMode && (
+                    <>
+                        <div>
+                            <Button className="p-2 backdrop-blur">
+                                <input
+                                    aria-label="draw-color"
+                                    type="color"
+                                    onChange={(e) =>
+                                        setCurrentColor(e.target.value)
+                                    }
+                                    className="h-8 w-8 cursor-pointer rounded-md bg-transparent"
+                                    value={currentColor}
+                                />
+                            </Button>
+                        </div>
+                        {moveMode && (
+                            <TextSizeButtons
+                                className="hidden gap-2 sm:flex"
+                                textMode={textMode}
+                                moveMode={moveMode}
+                                selectedShape={selectedShape}
+                                selectedTextId={selectedTextId}
+                                newTextSize={newTextSize}
+                                textElements={textElements}
+                                selectedId={selectedId}
+                                setTextElements={setTextElements}
+                                addToHistory={addToHistory}
+                                setNewTextSize={setNewTextSize}
+                            />
+                        )}
+
+                        <StrokeWidth
+                            strokeWidth={strokeWidth}
+                            onStrokeWidthChange={setStrokeWidth}
+                        />
+                    </>
+                )}
+                <div className="block sm:hidden">
+                    <DownloadPop
+                        stagePos={stagePos}
+                        stageRef={stageRef}
+                        stageScale={stageScale}
+                        strokeWidth={strokeWidth}
+                    />
+                </div>
+            </div>
+            <div className="fixed bottom-16 right-4 z-20 block sm:hidden">
+                {moveMode && (
+                    <TextSizeButtons
+                        className="flex flex-col items-center gap-2 sm:hidden"
+                        textMode={textMode}
+                        moveMode={moveMode}
+                        selectedShape={selectedShape}
+                        selectedTextId={selectedTextId}
+                        newTextSize={newTextSize}
+                        textElements={textElements}
+                        selectedId={selectedId}
+                        setTextElements={setTextElements}
+                        addToHistory={addToHistory}
+                        setNewTextSize={setNewTextSize}
+                    />
+                )}
+            </div>
+            <div className="fixed bottom-4 left-4 z-20 flex gap-2">
+                <Button
+                    aria-label="undo"
+                    variant="default"
+                    onClick={undo}
+                    disabled={!canUndo()}
+                >
+                    <Undo2 className="h-4 w-4" />
+                </Button>
+                <Button
+                    aria-label="redo"
+                    variant="default"
+                    onClick={redo}
+                    disabled={!canRedo()}
+                >
+                    <Redo2 className="h-4 w-4" />
+                </Button>
+                <div className="mx-2 h-8 w-px bg-border" />
+                <Button
+                    aria-label="zoom-in"
+                    variant="default"
+                    onClick={() => handleZoom(true)}
+                >
+                    <ZoomIn className="h-4 w-4" />
+                </Button>
+                <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-md bg-secondary px-2 text-sm">
+                    {Math.round(stageScale * 100)}%
+                </div>
+                <Button
+                    aria-label="zoom-out"
+                    variant="default"
+                    onClick={() => handleZoom(false)}
+                >
+                    <ZoomOut className="h-4 w-4" />
+                </Button>
+                <div className="mx-2 hidden h-8 w-px bg-border sm:block" />
+                <DownloadPop
+                    stagePos={stagePos}
+                    stageRef={stageRef}
+                    stageScale={stageScale}
+                    strokeWidth={strokeWidth}
+                    className="hidden sm:block"
+                />
+            </div>
+            <div className="fixed bottom-4 right-4 z-20 hidden sm:block">
+                <Help />
+            </div>
+        </>
+    );
+}

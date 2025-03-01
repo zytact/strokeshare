@@ -12,215 +12,19 @@ import {
 import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
-import { Button } from '@/components/ui/button';
 import { useTheme } from 'next-themes';
-import {
-    Hand,
-    Eraser,
-    MoveUpLeft,
-    Redo2,
-    Undo2,
-    ZoomIn,
-    ZoomOut,
-    Minus as LineIcon,
-    ArrowRight,
-    SquareDashed,
-    Square,
-    PaintBucket,
-    Palette,
-    Circle as CircleIcon,
-    Image as ImageIcon,
-} from 'lucide-react';
-import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
-import { StrokeWidth } from '@/components/ui/StrokeWidth';
-import { DownloadPop } from '@/components/ui/DownloadPop';
 import useImage from 'use-image';
-import { Help } from '@/components/ui/Help';
-import { TextSizeButtons } from '@/components/ui/TextSizeButtons';
-import TextButton from './TextButton';
+import {
+    isPointNearText,
+    isPointNearRectangle,
+    isPointNearCircle,
+    isPointNearImage,
+    getDistanceToLineSegment,
+} from '@/lib/eraserUtils';
 
-const getTextRotation = (textNode: Konva.Text) => {
-    // Get absolute rotation including all parent rotations
-    let rotation = textNode.rotation();
-    let parent = textNode.parent;
-    while (parent) {
-        rotation += parent.rotation();
-        parent = parent.parent;
-    }
-    return rotation;
-};
-
-const getTextPosition = (textNode: Konva.Text, stage: Konva.Stage) => {
-    // Get absolute position
-    const absPos = textNode.absolutePosition();
-
-    // Convert to relative position considering stage transform
-    return {
-        x: (absPos.x - stage.x()) / stage.scaleX(),
-        y: (absPos.y - stage.y()) / stage.scaleY(),
-    };
-};
-
-const isPointNearText = (
-    px: number,
-    py: number,
-    text: TextElement,
-    stage: Konva.Stage,
-    eraserRadius: number,
-) => {
-    const textNode = stage.findOne('#' + text.id) as Konva.Text;
-    if (!textNode) return false;
-
-    // Get the absolute transformed bounding box
-    const box = textNode.getClientRect();
-
-    // Convert the eraser point to the same coordinate space as the bounding box
-    const scale = stage.scaleX();
-    const point = {
-        x: px * scale + stage.x(),
-        y: py * scale + stage.y(),
-    };
-
-    // Adjust eraserRadius for stage scale
-    const scaledRadius = eraserRadius * scale;
-
-    // Check if point is near the bounding box edges
-    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
-    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
-    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
-    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
-
-    // Check if point is inside or near the box
-    const insideX =
-        point.x >= box.x - scaledRadius &&
-        point.x <= box.x + box.width + scaledRadius;
-    const insideY =
-        point.y >= box.y - scaledRadius &&
-        point.y <= box.y + box.height + scaledRadius;
-
-    return (
-        (insideX && (nearTop || nearBottom)) ||
-        (insideY && (nearLeft || nearRight))
-    );
-};
-
-const isPointNearRectangle = (
-    px: number,
-    py: number,
-    rect: Rectangle,
-    stage: Konva.Stage,
-    eraserRadius: number,
-) => {
-    // Convert the rectangle's position to the same coordinate space as the eraser point
-    const scale = stage.scaleX();
-    const box = {
-        x: rect.x * scale + stage.x(),
-        y: rect.y * scale + stage.y(),
-        width: rect.width * scale,
-        height: rect.height * scale,
-    };
-
-    // Convert the point to the same coordinate space
-    const point = {
-        x: px * scale + stage.x(),
-        y: py * scale + stage.y(),
-    };
-
-    // Adjust eraserRadius for stage scale
-    const scaledRadius = eraserRadius * scale;
-
-    // Check if point is near the rectangle edges
-    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
-    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
-    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
-    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
-
-    // Check if point is inside or near the rectangle
-    const insideX =
-        point.x >= box.x - scaledRadius &&
-        point.x <= box.x + box.width + scaledRadius;
-    const insideY =
-        point.y >= box.y - scaledRadius &&
-        point.y <= box.y + box.height + scaledRadius;
-
-    return (
-        (insideX && (nearTop || nearBottom)) ||
-        (insideY && (nearLeft || nearRight))
-    );
-};
-
-const isPointNearCircle = (
-    px: number,
-    py: number,
-    circle: Circle,
-    stage: Konva.Stage,
-    eraserRadius: number,
-) => {
-    // Convert the circle's position to the same coordinate space as the eraser point
-    const scale = stage.scaleX();
-    const circleCenter = {
-        x: circle.x * scale + stage.x(),
-        y: circle.y * scale + stage.y(),
-    };
-    const scaledRadius = circle.radius * scale;
-
-    // Convert the point to the same coordinate space
-    const point = {
-        x: px * scale + stage.x(),
-        y: py * scale + stage.y(),
-    };
-
-    // Calculate distance from point to circle's edge
-    const dx = point.x - circleCenter.x;
-    const dy = point.y - circleCenter.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Check if point is near the circle's edge
-    return Math.abs(distance - scaledRadius) <= eraserRadius * scale;
-};
-
-const isPointNearImage = (
-    px: number,
-    py: number,
-    image: Image,
-    stage: Konva.Stage,
-    eraserRadius: number,
-) => {
-    // Convert coordinates to stage space
-    const scale = stage.scaleX();
-    const box = {
-        x: image.x * scale + stage.x(),
-        y: image.y * scale + stage.y(),
-        width: image.width * scale,
-        height: image.height * scale,
-    };
-
-    const point = {
-        x: px * scale + stage.x(),
-        y: py * scale + stage.y(),
-    };
-
-    const scaledRadius = eraserRadius * scale;
-
-    // Check if point is near the edges
-    const nearLeft = Math.abs(point.x - box.x) <= scaledRadius;
-    const nearRight = Math.abs(point.x - (box.x + box.width)) <= scaledRadius;
-    const nearTop = Math.abs(point.y - box.y) <= scaledRadius;
-    const nearBottom = Math.abs(point.y - (box.y + box.height)) <= scaledRadius;
-
-    const insideX =
-        point.x >= box.x - scaledRadius &&
-        point.x <= box.x + box.width + scaledRadius;
-    const insideY =
-        point.y >= box.y - scaledRadius &&
-        point.y <= box.y + box.height + scaledRadius;
-
-    return (
-        (insideX && (nearTop || nearBottom)) ||
-        (insideY && (nearLeft || nearRight))
-    );
-};
+import { getTextRotation, getTextPosition } from '@/lib/textUtils';
+import CanvasButtons from './canvasButtons';
 
 interface LoadedImageProps
     extends Omit<React.ComponentProps<typeof Image>, 'image'> {
@@ -246,6 +50,11 @@ export default function InfiniteCanvas() {
     const [editingText, setEditingText] = useState<string | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const [clipboardItem, setClipboardItem] = useState<{
+        type: ShapeType;
+        data: DrawLine | TextElement | Rectangle | Circle | Image;
+    } | null>(null);
+
     const [dimensions, setDimensions] = useState({ width: 1000, height: 800 });
     const [currentColor, setCurrentColor] = useState(() =>
         resolvedTheme === 'dark' ? '#ffffff' : '#000000',
@@ -259,8 +68,6 @@ export default function InfiniteCanvas() {
         addToHistory,
         undo,
         redo,
-        canUndo,
-        canRedo,
         rectangles,
         setRectangles,
         circles,
@@ -270,9 +77,7 @@ export default function InfiniteCanvas() {
     } = useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [selectedShape, setSelectedShape] = useState<
-        'line' | 'text' | 'rectangle' | 'circle' | 'image' | null
-    >(null);
+    const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(3);
     const [lineSegmentMode, setLineSegmentMode] = useState(false);
@@ -360,6 +165,181 @@ export default function InfiniteCanvas() {
         return () => window.removeEventListener('resize', updateDimensions);
     }, []);
 
+    // Function to handle paste operation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handleElementPaste = () => {
+        if (!clipboardItem) return;
+
+        // Add a small offset to make the pasted item visible
+        const OFFSET = 20;
+
+        switch (clipboardItem.type) {
+            case 'line': {
+                const newLine = { ...clipboardItem.data } as DrawLine;
+                // Apply offset to points
+                if (
+                    'points' in newLine &&
+                    newLine.points &&
+                    newLine.points.length > 0
+                ) {
+                    const offsetPoints = [...newLine.points];
+                    for (let i = 0; i < offsetPoints.length; i += 2) {
+                        offsetPoints[i] += OFFSET; // x
+                        offsetPoints[i + 1] += OFFSET; // y
+                    }
+                    newLine.points = offsetPoints;
+                }
+                setLines([...lines, newLine]);
+                addToHistory([...lines, newLine]);
+                break;
+            }
+            case 'text': {
+                const textData = clipboardItem.data as TextElement;
+                const newText = {
+                    ...textData,
+                    id: `text-${Date.now()}`,
+                    x: textData.x + OFFSET,
+                    y: textData.y + OFFSET,
+                };
+                setTextElements([...textElements, newText]);
+                addToHistory([...textElements, newText]);
+                break;
+            }
+            case 'rectangle': {
+                const rectData = clipboardItem.data as Rectangle;
+                const newRect = {
+                    ...rectData,
+                    x: rectData.x + OFFSET,
+                    y: rectData.y + OFFSET,
+                };
+                setRectangles([...rectangles, newRect]);
+                addToHistory([...rectangles, newRect]);
+                break;
+            }
+            case 'circle': {
+                const circleData = clipboardItem.data as Circle;
+                const newCircle = {
+                    ...circleData,
+                    x: circleData.x + OFFSET,
+                    y: circleData.y + OFFSET,
+                };
+                setCircles([...circles, newCircle]);
+                addToHistory([...circles, newCircle]);
+                break;
+            }
+            case 'image': {
+                const imageData = clipboardItem.data as Image;
+                const newImage = {
+                    ...imageData,
+                    id: `image-${Date.now()}`,
+                    x: imageData.x + OFFSET,
+                    y: imageData.y + OFFSET,
+                };
+
+                setImages([...images, newImage]);
+                addToHistory([...images, newImage]);
+                break;
+            }
+        }
+
+        // Select the newly pasted item
+        setTimeout(() => {
+            if (stageRef.current) {
+                let pastedNode;
+
+                if (clipboardItem.type === 'line') {
+                    pastedNode = stageRef.current.findOne(
+                        `#line-${lines.length}`,
+                    );
+                    setSelectedId(String(lines.length));
+                } else if (clipboardItem.type === 'text') {
+                    const newTextId = `text-${Date.now()}`;
+                    pastedNode = stageRef.current.findOne(`#${newTextId}`);
+                    setSelectedId(newTextId);
+                } else if (clipboardItem.type === 'rectangle') {
+                    pastedNode = stageRef.current.findOne(
+                        `#rect-${rectangles.length}`,
+                    );
+                    setSelectedId(String(rectangles.length));
+                } else if (clipboardItem.type === 'circle') {
+                    pastedNode = stageRef.current.findOne(
+                        `#circle-${circles.length}`,
+                    );
+                    setSelectedId(String(circles.length));
+                } else if (clipboardItem.type === 'image') {
+                    const newImageId = `image-${Date.now()}`;
+                    pastedNode = stageRef.current.findOne(`#${newImageId}`);
+                    setSelectedId(newImageId);
+                }
+
+                if (pastedNode && transformerRef.current) {
+                    transformerRef.current.nodes([pastedNode]);
+                    transformerRef.current.getLayer()?.batchDraw();
+                    setSelectedShape(clipboardItem.type);
+                }
+            }
+        }, 10);
+    };
+
+    // Function to handle copy operation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handleElementCopy = () => {
+        if (!selectedShape || !selectedId) return;
+
+        switch (selectedShape) {
+            case 'line': {
+                const lineIndex = parseInt(selectedId);
+                if (lines[lineIndex]) {
+                    setClipboardItem({
+                        type: 'line',
+                        data: { ...lines[lineIndex] },
+                    });
+                }
+                break;
+            }
+            case 'text': {
+                const text = textElements.find((t) => t.id === selectedId);
+                if (text) {
+                    setClipboardItem({
+                        type: 'text',
+                        data: { ...text },
+                    });
+                }
+                break;
+            }
+            case 'rectangle': {
+                const rectIndex = parseInt(selectedId);
+                if (rectangles[rectIndex]) {
+                    setClipboardItem({
+                        type: 'rectangle',
+                        data: { ...rectangles[rectIndex] },
+                    });
+                }
+                break;
+            }
+            case 'circle': {
+                const circleIndex = parseInt(selectedId);
+                if (circles[circleIndex]) {
+                    setClipboardItem({
+                        type: 'circle',
+                        data: { ...circles[circleIndex] },
+                    });
+                }
+                break;
+            }
+            case 'image': {
+                const image = images.find((img) => img.id === selectedId);
+                if (image) {
+                    setClipboardItem({
+                        type: 'image',
+                        data: { ...image },
+                    });
+                }
+                break;
+            }
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey) {
@@ -367,13 +347,34 @@ export default function InfiniteCanvas() {
                     undo();
                 } else if (e.key === 'y') {
                     redo();
+                } else if (e.key === 'c') {
+                    // Copy selected element
+                    if (moveMode && selectedId && selectedShape) {
+                        e.preventDefault();
+                        handleElementCopy();
+                    }
+                } else if (e.key === 'v') {
+                    // Paste copied element
+                    if (moveMode && clipboardItem) {
+                        e.preventDefault();
+                        handleElementPaste();
+                    }
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [undo, redo]);
+    }, [
+        undo,
+        redo,
+        moveMode,
+        selectedId,
+        selectedShape,
+        clipboardItem,
+        handleElementCopy,
+        handleElementPaste,
+    ]);
 
     const [stagePos, setStagePos] = useState<Point>({ x: 0, y: 0 });
     const [stageScale, setStageScale] = useState(1);
@@ -1432,27 +1433,6 @@ export default function InfiniteCanvas() {
         context.stroke();
     };
 
-    const getSelectedLine = () => {
-        if (selectedId && selectedShape === 'line') {
-            return lines[parseInt(selectedId)];
-        }
-        return null;
-    };
-
-    const getSelectedRect = () => {
-        if (selectedId && selectedShape === 'rectangle') {
-            return rectangles[parseInt(selectedId)];
-        }
-        return null;
-    };
-
-    const getSelectedCircle = () => {
-        if (selectedId && selectedShape === 'circle') {
-            return circles[parseInt(selectedId)];
-        }
-        return null;
-    };
-
     const handleFillColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newColor = e.target.value;
         if (moveMode && selectedId && selectedShape) {
@@ -1517,7 +1497,7 @@ export default function InfiniteCanvas() {
     };
 
     useEffect(() => {
-        const handlePaste = async (e: ClipboardEvent) => {
+        const handleImagePaste = async (e: ClipboardEvent) => {
             if (e.clipboardData && e.clipboardData.items) {
                 const items = e.clipboardData.items;
                 for (let i = 0; i < items.length; i++) {
@@ -1560,8 +1540,8 @@ export default function InfiniteCanvas() {
             }
         };
 
-        window.addEventListener('paste', handlePaste);
-        return () => window.removeEventListener('paste', handlePaste);
+        window.addEventListener('paste', handleImagePaste);
+        return () => window.removeEventListener('paste', handleImagePaste);
     }, [
         addToHistory,
         dimensions.height,
@@ -1577,435 +1557,51 @@ export default function InfiniteCanvas() {
 
     return (
         <>
-            <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
-                <div>
-                    <Button
-                        aria-label="hand"
-                        variant={dragModeEnabled ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (dragModeEnabled) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setDragModeEnabled(true);
-                            }
-                        }}
-                    >
-                        <Hand className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="move"
-                        variant={moveMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (moveMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setMoveMode(true);
-                            }
-                        }}
-                    >
-                        <MoveUpLeft className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="eraser"
-                        variant={eraserMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (eraserMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setEraserMode(true);
-                            }
-                        }}
-                    >
-                        <Eraser className="h-4 w-4" />{' '}
-                    </Button>
-                </div>
-                <div>
-                    <TextButton
-                        textMode={textMode}
-                        moveMode={moveMode}
-                        selectedShape={selectedShape}
-                        selectedTextId={selectedTextId}
-                        newTextSize={newTextSize}
-                        textElements={textElements}
-                        selectedId={selectedId}
-                        setTextElements={setTextElements}
-                        addToHistory={addToHistory}
-                        setNewTextSize={setNewTextSize}
-                        onClick={() => {
-                            if (textMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setTextMode(true);
-                            }
-                        }}
-                    />
-                </div>
-                <div>
-                    <Button
-                        aria-label="line-segment"
-                        variant={lineSegmentMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (lineSegmentMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setLineSegmentMode(true);
-                            }
-                        }}
-                    >
-                        <LineIcon className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="arrow"
-                        variant={arrowMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (arrowMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setArrowMode(true);
-                            }
-                        }}
-                    >
-                        <ArrowRight className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="rectangle"
-                        variant={rectangleMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (rectangleMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setRectangleMode(true);
-                            }
-                        }}
-                    >
-                        <Square className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="circle"
-                        variant={circleMode ? 'secondary' : 'default'}
-                        onClick={() => {
-                            if (circleMode) {
-                                disableAllModes();
-                            } else {
-                                disableAllModes();
-                                setCircleMode(true);
-                            }
-                        }}
-                    >
-                        <CircleIcon className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div className="relative">
-                    <Button aria-label="upload-image" className="relative">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                        />
-                        <ImageIcon className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div>
-                    <Button
-                        aria-label="dashed-line"
-                        variant={
-                            moveMode &&
-                            (getSelectedLine()?.isDashed ||
-                                getSelectedRect()?.isDashed ||
-                                getSelectedCircle()?.isDashed)
-                                ? 'secondary'
-                                : dashedMode
-                                  ? 'secondary'
-                                  : 'default'
-                        }
-                        onClick={() => {
-                            if (moveMode && selectedId) {
-                                switch (selectedShape) {
-                                    case 'line':
-                                        const newLines = [...lines];
-                                        const lineIndex = parseInt(selectedId);
-                                        newLines[lineIndex] = {
-                                            ...newLines[lineIndex],
-                                            isDashed:
-                                                !newLines[lineIndex].isDashed,
-                                        };
-                                        setLines(newLines);
-                                        addToHistory(newLines);
-                                        break;
-                                    case 'rectangle':
-                                        const newRectangles = [...rectangles];
-                                        const rectIndex = parseInt(selectedId);
-                                        newRectangles[rectIndex] = {
-                                            ...newRectangles[rectIndex],
-                                            isDashed:
-                                                !newRectangles[rectIndex]
-                                                    .isDashed,
-                                        };
-                                        setRectangles(newRectangles);
-                                        addToHistory(newRectangles);
-                                        break;
-                                    case 'circle':
-                                        const newCircles = [...circles];
-                                        const circleIndex =
-                                            parseInt(selectedId);
-                                        newCircles[circleIndex] = {
-                                            ...newCircles[circleIndex],
-                                            isDashed:
-                                                !newCircles[circleIndex]
-                                                    .isDashed,
-                                        };
-                                        setCircles(newCircles);
-                                        addToHistory(newCircles);
-                                        break;
-                                }
-                            } else {
-                                // Toggle global dash mode
-                                setDashedMode(!dashedMode);
-                            }
-                        }}
-                    >
-                        <SquareDashed className="h-4 w-4" />
-                    </Button>
-                </div>
-                {moveMode && (
-                    <>
-                        {selectedShape === 'rectangle' ||
-                            (selectedShape === 'circle' && (
-                                <div className="relative">
-                                    <Button
-                                        aria-label="fill"
-                                        className="relative"
-                                    >
-                                        <input
-                                            type="color"
-                                            onChange={handleFillColorChange}
-                                            className="absolute inset-0 cursor-pointer opacity-0"
-                                        />
-                                        <PaintBucket className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        <div className="relative">
-                            <Button
-                                aria-label="stroke-color"
-                                className="relative"
-                                disabled={!selectedShape}
-                            >
-                                <input
-                                    type="color"
-                                    onChange={(e) => {
-                                        const newColor = e.target.value;
-                                        if (
-                                            moveMode &&
-                                            selectedId &&
-                                            selectedShape
-                                        ) {
-                                            switch (selectedShape) {
-                                                case 'line': {
-                                                    const newLines = [...lines];
-                                                    const lineIndex =
-                                                        parseInt(selectedId);
-                                                    newLines[lineIndex] = {
-                                                        ...newLines[lineIndex],
-                                                        color: newColor,
-                                                    };
-                                                    setLines(newLines);
-                                                    addToHistory(newLines);
-                                                    break;
-                                                }
-
-                                                case 'rectangle': {
-                                                    const newRectangles = [
-                                                        ...rectangles,
-                                                    ];
-                                                    const rectIndex =
-                                                        parseInt(selectedId);
-                                                    newRectangles[rectIndex] = {
-                                                        ...newRectangles[
-                                                            rectIndex
-                                                        ],
-                                                        color: newColor,
-                                                    };
-                                                    setRectangles(
-                                                        newRectangles,
-                                                    );
-                                                    addToHistory(newRectangles);
-                                                    break;
-                                                }
-
-                                                case 'circle': {
-                                                    const newCircles = [
-                                                        ...circles,
-                                                    ];
-                                                    const circleIndex =
-                                                        parseInt(selectedId);
-                                                    newCircles[circleIndex] = {
-                                                        ...newCircles[
-                                                            circleIndex
-                                                        ],
-                                                        color: newColor,
-                                                    };
-                                                    setCircles(newCircles);
-                                                    addToHistory(newCircles);
-                                                    break;
-                                                }
-                                                case 'text': {
-                                                    const newTextElements =
-                                                        textElements.map((t) =>
-                                                            t.id === selectedId
-                                                                ? {
-                                                                      ...t,
-                                                                      fill: newColor,
-                                                                  }
-                                                                : t,
-                                                        );
-                                                    setTextElements(
-                                                        newTextElements,
-                                                    );
-                                                    addToHistory(
-                                                        newTextElements,
-                                                    );
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }}
-                                    className="absolute inset-0 cursor-pointer opacity-0"
-                                    disabled={!selectedShape}
-                                />
-                                <Palette className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </>
-                )}
-                {!eraserMode && (
-                    <>
-                        <div>
-                            <Button className="p-2 backdrop-blur">
-                                <input
-                                    aria-label="draw-color"
-                                    type="color"
-                                    onChange={(e) =>
-                                        setCurrentColor(e.target.value)
-                                    }
-                                    className="h-8 w-8 cursor-pointer rounded-md bg-transparent"
-                                    value={currentColor}
-                                />
-                            </Button>
-                        </div>
-                        {moveMode && (
-                            <TextSizeButtons
-                                className="hidden gap-2 sm:flex"
-                                textMode={textMode}
-                                moveMode={moveMode}
-                                selectedShape={selectedShape}
-                                selectedTextId={selectedTextId}
-                                newTextSize={newTextSize}
-                                textElements={textElements}
-                                selectedId={selectedId}
-                                setTextElements={setTextElements}
-                                addToHistory={addToHistory}
-                                setNewTextSize={setNewTextSize}
-                            />
-                        )}
-
-                        <StrokeWidth
-                            strokeWidth={strokeWidth}
-                            onStrokeWidthChange={setStrokeWidth}
-                        />
-                    </>
-                )}
-                <div className="block sm:hidden">
-                    <DownloadPop
-                        stagePos={stagePos}
-                        stageRef={stageRef}
-                        stageScale={stageScale}
-                        strokeWidth={strokeWidth}
-                    />
-                </div>
-            </div>
-            <div className="fixed bottom-16 right-4 z-20 block sm:hidden">
-                {moveMode && (
-                    <TextSizeButtons
-                        className="flex flex-col items-center gap-2 sm:hidden"
-                        textMode={textMode}
-                        moveMode={moveMode}
-                        selectedShape={selectedShape}
-                        selectedTextId={selectedTextId}
-                        newTextSize={newTextSize}
-                        textElements={textElements}
-                        selectedId={selectedId}
-                        setTextElements={setTextElements}
-                        addToHistory={addToHistory}
-                        setNewTextSize={setNewTextSize}
-                    />
-                )}
-            </div>
-            <div className="fixed bottom-4 left-4 z-20 flex gap-2">
-                <Button
-                    aria-label="undo"
-                    variant="default"
-                    onClick={undo}
-                    disabled={!canUndo()}
-                >
-                    <Undo2 className="h-4 w-4" />
-                </Button>
-                <Button
-                    aria-label="redo"
-                    variant="default"
-                    onClick={redo}
-                    disabled={!canRedo()}
-                >
-                    <Redo2 className="h-4 w-4" />
-                </Button>
-                <div className="mx-2 h-8 w-px bg-border" />
-                <Button
-                    aria-label="zoom-in"
-                    variant="default"
-                    onClick={() => handleZoom(true)}
-                >
-                    <ZoomIn className="h-4 w-4" />
-                </Button>
-                <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-md bg-secondary px-2 text-sm">
-                    {Math.round(stageScale * 100)}%
-                </div>
-                <Button
-                    aria-label="zoom-out"
-                    variant="default"
-                    onClick={() => handleZoom(false)}
-                >
-                    <ZoomOut className="h-4 w-4" />
-                </Button>
-                <div className="mx-2 hidden h-8 w-px bg-border sm:block" />
-                <DownloadPop
-                    stagePos={stagePos}
-                    stageRef={stageRef}
-                    stageScale={stageScale}
-                    strokeWidth={strokeWidth}
-                    className="hidden sm:block"
-                />
-            </div>
-            <div className="fixed bottom-4 right-4 z-20 hidden sm:block">
-                <Help />
-            </div>
+            <CanvasButtons
+                setMoveMode={setMoveMode}
+                setDragModeEnabled={setDragModeEnabled}
+                setEraserMode={setEraserMode}
+                setLineSegmentMode={setLineSegmentMode}
+                setArrowMode={setArrowMode}
+                setRectangleMode={setRectangleMode}
+                setCircleMode={setCircleMode}
+                setTextMode={setTextMode}
+                setNewTextSize={setNewTextSize}
+                handleImageUpload={handleImageUpload}
+                arrowMode={arrowMode}
+                eraserMode={eraserMode}
+                lineSegmentMode={lineSegmentMode}
+                rectangleMode={rectangleMode}
+                circleMode={circleMode}
+                dashedMode={dashedMode}
+                setDashedMode={setDashedMode}
+                stageRef={stageRef}
+                addToHistory={addToHistory}
+                disableAllModes={disableAllModes}
+                setStrokeWidth={setStrokeWidth}
+                handleFillColorChange={handleFillColorChange}
+                circles={circles}
+                currentColor={currentColor}
+                setCurrentColor={setCurrentColor}
+                strokeWidth={strokeWidth}
+                dragModeEnabled={dragModeEnabled}
+                handleZoom={handleZoom}
+                lines={lines}
+                moveMode={moveMode}
+                newTextSize={newTextSize}
+                stagePos={stagePos}
+                rectangles={rectangles}
+                selectedId={selectedId}
+                selectedShape={selectedShape}
+                selectedTextId={selectedTextId}
+                textElements={textElements}
+                setCircles={setCircles}
+                setLines={setLines}
+                setRectangles={setRectangles}
+                setTextElements={setTextElements}
+                stageScale={stageScale}
+                textMode={textMode}
+            />
             <textarea
                 ref={textareaRef}
                 aria-label="textarea"
@@ -2109,6 +1705,105 @@ export default function InfiniteCanvas() {
                     scale={{ x: stageScale, y: stageScale }}
                 >
                     <Layer data-testid="layer">
+                        {images.map((image) => (
+                            <LoadedImage
+                                key={image.id}
+                                id={`image-${image.id}`} // Ensure consistent ID format
+                                src={image.src}
+                                alt={`User uploaded content ${image.id}`}
+                                x={image.x}
+                                y={image.y}
+                                width={image.width}
+                                height={image.height}
+                                draggable={moveMode}
+                                onClick={(e: KonvaEventObject<Event>) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
+                                        }
+                                    }
+                                }}
+                                onTouchStart={(
+                                    e: KonvaEventObject<TouchEvent>,
+                                ) => {
+                                    if (moveMode) {
+                                        e.cancelBubble = true;
+
+                                        if (
+                                            selectedShape !== 'image' ||
+                                            selectedId !== image.id
+                                        ) {
+                                            const transformer =
+                                                transformerRef.current;
+                                            if (transformer) {
+                                                transformer.nodes([e.target]);
+                                                transformer
+                                                    .getLayer()
+                                                    ?.batchDraw();
+                                            }
+                                            setSelectedId(image.id);
+                                            setSelectedShape('image');
+                                        }
+                                    }
+                                }}
+                                onTransformEnd={(
+                                    e: KonvaEventObject<Event>,
+                                ) => {
+                                    const node = e.target;
+                                    const scaleX = node.scaleX();
+                                    const scaleY = node.scaleY();
+
+                                    node.scaleX(1);
+                                    node.scaleY(1);
+
+                                    const newImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                                  width: node.width() * scaleX,
+                                                  height:
+                                                      node.height() * scaleY,
+                                              }
+                                            : img,
+                                    );
+
+                                    setImages(newImages);
+                                    addToHistory(newImages);
+                                }}
+                                onDragMove={(e: KonvaEventObject<Event>) => {
+                                    const node = e.target;
+                                    const updatedImages = images.map((img) =>
+                                        img.id === image.id
+                                            ? {
+                                                  ...img,
+                                                  x: node.x(),
+                                                  y: node.y(),
+                                              }
+                                            : img,
+                                    );
+                                    setImages(updatedImages);
+                                }}
+                                onDragEnd={() => {
+                                    addToHistory(images);
+                                }}
+                            />
+                        ))}
                         {lines.map((line, i) => (
                             <Line
                                 data-testid="line"
@@ -2488,105 +2183,6 @@ export default function InfiniteCanvas() {
                                 }}
                                 onDragEnd={() => {
                                     addToHistory(textElements);
-                                }}
-                            />
-                        ))}
-                        {images.map((image) => (
-                            <LoadedImage
-                                key={image.id}
-                                id={`image-${image.id}`} // Ensure consistent ID format
-                                src={image.src}
-                                alt={`User uploaded content ${image.id}`}
-                                x={image.x}
-                                y={image.y}
-                                width={image.width}
-                                height={image.height}
-                                draggable={moveMode}
-                                onClick={(e: KonvaEventObject<Event>) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
-                                }}
-                                onTouchStart={(
-                                    e: KonvaEventObject<TouchEvent>,
-                                ) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
-                                }}
-                                onTransformEnd={(
-                                    e: KonvaEventObject<Event>,
-                                ) => {
-                                    const node = e.target;
-                                    const scaleX = node.scaleX();
-                                    const scaleY = node.scaleY();
-
-                                    node.scaleX(1);
-                                    node.scaleY(1);
-
-                                    const newImages = images.map((img) =>
-                                        img.id === image.id
-                                            ? {
-                                                  ...img,
-                                                  x: node.x(),
-                                                  y: node.y(),
-                                                  width: node.width() * scaleX,
-                                                  height:
-                                                      node.height() * scaleY,
-                                              }
-                                            : img,
-                                    );
-
-                                    setImages(newImages);
-                                    addToHistory(newImages);
-                                }}
-                                onDragMove={(e: KonvaEventObject<Event>) => {
-                                    const node = e.target;
-                                    const updatedImages = images.map((img) =>
-                                        img.id === image.id
-                                            ? {
-                                                  ...img,
-                                                  x: node.x(),
-                                                  y: node.y(),
-                                              }
-                                            : img,
-                                    );
-                                    setImages(updatedImages);
-                                }}
-                                onDragEnd={() => {
-                                    addToHistory(images);
                                 }}
                             />
                         ))}
