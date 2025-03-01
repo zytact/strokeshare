@@ -13,7 +13,6 @@ import { useState, useRef, useEffect } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
 import { useTheme } from 'next-themes';
-import { getDistanceToLineSegment } from '@/lib/utils';
 import { useCanvasStore } from '@/store/useCanvasStore';
 import useImage from 'use-image';
 import {
@@ -21,6 +20,7 @@ import {
     isPointNearRectangle,
     isPointNearCircle,
     isPointNearImage,
+    getDistanceToLineSegment,
 } from '@/lib/eraserUtils';
 
 import { getTextRotation, getTextPosition } from '@/lib/textUtils';
@@ -51,7 +51,7 @@ export default function InfiniteCanvas() {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const [clipboardItem, setClipboardItem] = useState<{
-        type: 'line' | 'text' | 'rectangle' | 'circle' | 'image';
+        type: ShapeType;
         data: DrawLine | TextElement | Rectangle | Circle | Image;
     } | null>(null);
 
@@ -77,9 +77,7 @@ export default function InfiniteCanvas() {
     } = useCanvasStore();
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [selectedShape, setSelectedShape] = useState<
-        'line' | 'text' | 'rectangle' | 'circle' | 'image' | null
-    >(null);
+    const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
     const [moveMode, setMoveMode] = useState(false);
     const [strokeWidth, setStrokeWidth] = useState(3);
     const [lineSegmentMode, setLineSegmentMode] = useState(false);
@@ -1435,27 +1433,6 @@ export default function InfiniteCanvas() {
         context.stroke();
     };
 
-    const getSelectedLine = () => {
-        if (selectedId && selectedShape === 'line') {
-            return lines[parseInt(selectedId)];
-        }
-        return null;
-    };
-
-    const getSelectedRect = () => {
-        if (selectedId && selectedShape === 'rectangle') {
-            return rectangles[parseInt(selectedId)];
-        }
-        return null;
-    };
-
-    const getSelectedCircle = () => {
-        if (selectedId && selectedShape === 'circle') {
-            return circles[parseInt(selectedId)];
-        }
-        return null;
-    };
-
     const handleFillColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newColor = e.target.value;
         if (moveMode && selectedId && selectedShape) {
@@ -1608,9 +1585,6 @@ export default function InfiniteCanvas() {
                 setCurrentColor={setCurrentColor}
                 strokeWidth={strokeWidth}
                 dragModeEnabled={dragModeEnabled}
-                getSelectedCircle={getSelectedCircle}
-                getSelectedLine={getSelectedLine}
-                getSelectedRect={getSelectedRect}
                 handleZoom={handleZoom}
                 lines={lines}
                 moveMode={moveMode}

@@ -23,6 +23,11 @@ import { StrokeWidth } from './StrokeWidth';
 import { DownloadPop } from './DownloadPop';
 import { Help } from './Help';
 import { useCanvasStore } from '@/store/useCanvasStore';
+import {
+    getSelectedLine,
+    getSelectedCircle,
+    getSelectedRect,
+} from '@/lib/selectShapeUtils';
 
 interface CanvasButtonsProps {
     dragModeEnabled: boolean;
@@ -68,9 +73,6 @@ interface CanvasButtonsProps {
     setRectangles: (rectangles: Rectangle[]) => void;
     circles: Circle[];
     setCircles: (circles: Circle[]) => void;
-    getSelectedLine: () => DrawLine | null;
-    getSelectedRect: () => Rectangle | null;
-    getSelectedCircle: () => Circle | null;
     disableAllModes: () => void;
     setStrokeWidth: (width: number) => void;
 }
@@ -117,9 +119,6 @@ export default function CanvasButtons({
     setRectangles,
     circles,
     setCircles,
-    getSelectedLine,
-    getSelectedRect,
-    getSelectedCircle,
     disableAllModes,
     setStrokeWidth,
 }: CanvasButtonsProps) {
@@ -277,9 +276,18 @@ export default function CanvasButtons({
                         aria-label="dashed-line"
                         variant={
                             moveMode &&
-                            (getSelectedLine()?.isDashed ||
-                                getSelectedRect()?.isDashed ||
-                                getSelectedCircle()?.isDashed)
+                            (getSelectedLine(selectedId, selectedShape, lines)
+                                ?.isDashed ||
+                                getSelectedRect(
+                                    selectedId,
+                                    selectedShape,
+                                    rectangles,
+                                )?.isDashed ||
+                                getSelectedCircle(
+                                    selectedId,
+                                    selectedShape,
+                                    circles,
+                                )?.isDashed)
                                 ? 'secondary'
                                 : dashedMode
                                   ? 'secondary'
