@@ -52,3 +52,11 @@ interface Image {
 }
 
 type ShapeType = 'line' | 'text' | 'rectangle' | 'circle' | 'image';
+
+interface ConsolidatedState {
+    lines: DrawLine[];
+    textElements: TextElement[];
+    rectangles: Rectangle[];
+    circles: Circle[];
+    images: Image[];
+}
