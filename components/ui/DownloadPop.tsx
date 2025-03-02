@@ -94,6 +94,65 @@ export function DownloadPop({
         }
     };
 
+    const handleJSON = async () => {
+        // Create a structured JSON object with all canvas elements
+        const canvasData = {
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            elements: {
+                lines,
+                textElements,
+                rectangles,
+                circles,
+                images,
+            },
+        };
+
+        // Convert to JSON string with nice formatting
+        const jsonString = JSON.stringify(canvasData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+
+        try {
+            // Use the File System Access API to show a file picker
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fileHandle = await (window as any).showSaveFilePicker({
+                suggestedName: 'Untitled.str',
+                types: [
+                    {
+                        description: 'StrokeShare File',
+                        accept: {
+                            'application/json': ['.str'],
+                        },
+                    },
+                ],
+            });
+
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } catch (err) {
+            // User probably canceled the save dialog
+            console.log('Save operation was canceled or failed:', err);
+
+            // Fallback method if the File System Access API fails
+            if (
+                err &&
+                typeof err === 'object' &&
+                'name' in err &&
+                err.name !== 'AbortError'
+            ) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'Untitled.str';
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+        }
+    };
+
     const handleSVG = () => {
         if (!stageRef.current) return;
 
@@ -122,22 +181,22 @@ export function DownloadPop({
 
         // Add images first (to be in the background)
         images.forEach((image, index) => {
-            svg += `<use 
-                xlink:href="#img${index}" 
-                x="${image.x}" 
-                y="${image.y}" 
-                width="${image.width}" 
+            svg += `<use
+                xlink:href="#img${index}"
+                x="${image.x}"
+                y="${image.y}"
+                width="${image.width}"
                 height="${image.height}"
             />`;
         });
 
         // Add rectangles first (to be in the background)
         rectangles.forEach((rect) => {
-            svg += `<rect 
-                x="${rect.x}" 
-                y="${rect.y}" 
-                width="${rect.width}" 
-                height="${rect.height}" 
+            svg += `<rect
+                x="${rect.x}"
+                y="${rect.y}"
+                width="${rect.width}"
+                height="${rect.height}"
                 stroke="${rect.color}"
                 stroke-width="${rect.strokeWidth || strokeWidth}"
                 ${rect.fill ? `fill="${rect.fill}"` : 'fill="none"'}
@@ -148,10 +207,10 @@ export function DownloadPop({
 
         // Add circles
         circles.forEach((circle) => {
-            svg += `<circle 
-                cx="${circle.x}" 
-                cy="${circle.y}" 
-                r="${circle.radius}" 
+            svg += `<circle
+                cx="${circle.x}"
+                cy="${circle.y}"
+                r="${circle.radius}"
                 stroke="${circle.color}"
                 stroke-width="${circle.strokeWidth || strokeWidth}"
                 ${circle.fill ? `fill="${circle.fill}"` : 'fill="none"'}
@@ -183,9 +242,9 @@ export function DownloadPop({
                       .replace(/'/g, '&apos;')
                 : '';
 
-            svg += `<text x="${text.x || 0}" y="${text.y || 0}" 
-                fill="${textColor}" 
-                font-family="system-ui, sans-serif" 
+            svg += `<text x="${text.x || 0}" y="${text.y || 0}"
+                fill="${textColor}"
+                font-family="system-ui, sans-serif"
                 font-size="${text.fontSize || 16}px"
                 text-anchor="start"
                 dominant-baseline="hanging">${escapedContent}</text>`;
@@ -279,6 +338,14 @@ export function DownloadPop({
                         >
                             <Download className="h-4 w-4" />
                             <span>PNG</span>
+                        </Button>
+                        <Button
+                            variant="default"
+                            className="flex items-center gap-2"
+                            onClick={handleJSON}
+                        >
+                            <Download className="h-4 w-4" />
+                            <span>Save to Disk</span>
                         </Button>
                         <Button
                             variant="default"

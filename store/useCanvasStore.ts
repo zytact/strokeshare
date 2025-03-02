@@ -1,12 +1,5 @@
 import { create } from 'zustand';
 
-interface ConsolidatedState {
-    lines: DrawLine[];
-    textElements: TextElement[];
-    rectangles: Rectangle[];
-    circles: Circle[];
-    images: Image[];
-}
 interface CanvasState {
     lines: DrawLine[];
     textElements: TextElement[];

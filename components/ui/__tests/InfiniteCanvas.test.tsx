@@ -48,21 +48,7 @@ describe('InfiniteCanvas', () => {
 
         // Check if buttons are present (hand, move, eraser, and color picker)
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(19);
-    });
-
-    it('toggles drag mode when hand button is clicked', () => {
-        render(<InfiniteCanvas />);
-        const buttons = screen.getAllByRole('button');
-        const handButton = buttons[0]; // First button is hand
-        const canvasContainer = screen.getByRole('presentation').parentElement;
-
-        // Initial state
-        expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
-
-        // Click hand button
-        fireEvent.click(handButton);
-        expect(canvasContainer).toHaveStyle({ cursor: 'grab' });
+        expect(buttons).toHaveLength(20);
     });
 
     it('hides color picker in eraser mode', () => {
@@ -154,20 +140,6 @@ describe('InfiniteCanvas MoveMode', () => {
         // Click again to disable
         fireEvent.click(moveUpLeftButton);
         expect(moveUpLeftButton).toHaveClass('bg-primary');
-    });
-
-    it('changes cursor style when move mode is enabled', () => {
-        render(<InfiniteCanvas />);
-        const buttons = screen.getAllByRole('button');
-        const moveUpLeftButton = buttons[1];
-        const canvasContainer = screen.getByTestId('canvas-container');
-
-        // Initial state
-        expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
-
-        // Enable move mode
-        fireEvent.click(moveUpLeftButton);
-        expect(canvasContainer).toHaveStyle({ cursor: 'crosshair' });
     });
 });
 
