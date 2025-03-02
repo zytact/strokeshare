@@ -17,6 +17,7 @@ import {
     Palette,
     Circle as CircleIcon,
     Image as ImageIcon,
+    FileUp,
 } from 'lucide-react';
 import { TextSizeButtons } from './TextSizeButtons';
 import { StrokeWidth } from './StrokeWidth';
@@ -57,22 +58,11 @@ interface CanvasButtonsProps {
     strokeWidth: number;
     setCurrentColor: (color: string) => void;
     currentColor: string;
-    textElements: TextElement[];
-    setTextElements: (elements: TextElement[]) => void;
-    addToHistory: (
-        elements: TextElement[] | DrawLine[] | Rectangle[] | Circle[],
-    ) => void;
     newTextSize: number;
     setNewTextSize: (size: number) => void;
     selectedShape: ShapeType | null;
     selectedTextId: string | null;
     selectedId: string | null;
-    lines: DrawLine[];
-    setLines: (lines: DrawLine[]) => void;
-    rectangles: Rectangle[];
-    setRectangles: (rectangles: Rectangle[]) => void;
-    circles: Circle[];
-    setCircles: (circles: Circle[]) => void;
     disableAllModes: () => void;
     setStrokeWidth: (width: number) => void;
 }
@@ -105,27 +95,102 @@ export default function CanvasButtons({
     strokeWidth,
     setCurrentColor,
     currentColor,
-    textElements,
-    setTextElements,
-    addToHistory,
     newTextSize,
     setNewTextSize,
     selectedShape,
     selectedTextId,
     selectedId,
-    lines,
-    setLines,
-    rectangles,
-    setRectangles,
-    circles,
-    setCircles,
     disableAllModes,
     setStrokeWidth,
 }: CanvasButtonsProps) {
-    const { canRedo, canUndo, undo, redo } = useCanvasStore();
+    const {
+        canRedo,
+        canUndo,
+        undo,
+        redo,
+        setImages,
+        setLines,
+        setRectangles,
+        setCircles,
+        lines,
+        rectangles,
+        textElements,
+        setTextElements,
+        circles,
+        addToHistory,
+    } = useCanvasStore();
+
+    const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || !e.target.files[0]) return;
+
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+            try {
+                if (!event.target || typeof event.target.result !== 'string')
+                    return;
+
+                const jsonData = JSON.parse(event.target.result);
+
+                // Validate the imported data has the expected structure
+                if (!jsonData.elements) {
+                    console.error('Invalid JSON format: missing elements');
+                    return;
+                }
+
+                // Import all canvas elements
+                const elements = jsonData.elements;
+
+                if (elements.lines) {
+                    setLines(elements.lines);
+                    addToHistory(elements.lines);
+                }
+
+                if (elements.textElements) {
+                    setTextElements(elements.textElements);
+                    addToHistory(elements.textElements);
+                }
+
+                if (elements.rectangles) {
+                    setRectangles(elements.rectangles);
+                    addToHistory(elements.rectangles);
+                }
+
+                if (elements.circles) {
+                    setCircles(elements.circles);
+                    addToHistory(elements.circles);
+                }
+
+                if (elements.images) {
+                    setImages(elements.images);
+                    addToHistory(elements.images);
+                }
+
+                // Reset the file input
+                e.target.value = '';
+            } catch (error) {
+                console.error('Error importing JSON:', error);
+            }
+        };
+
+        reader.readAsText(file);
+    };
+
     return (
         <>
             <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
+                <div className="relative">
+                    <Button variant="default">
+                        <input
+                            type="file"
+                            accept=".str"
+                            onChange={handleImportJSON}
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                        />
+                        <FileUp className="h-4 w-4" />
+                    </Button>
+                </div>
                 <div>
                     <Button
                         aria-label="hand"
@@ -344,22 +409,19 @@ export default function CanvasButtons({
                 </div>
                 {moveMode && (
                     <>
-                        {selectedShape === 'rectangle' ||
-                            (selectedShape === 'circle' && (
-                                <div className="relative">
-                                    <Button
-                                        aria-label="fill"
-                                        className="relative"
-                                    >
-                                        <input
-                                            type="color"
-                                            onChange={handleFillColorChange}
-                                            className="absolute inset-0 cursor-pointer opacity-0"
-                                        />
-                                        <PaintBucket className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
+                        {(selectedShape === 'rectangle' ||
+                            selectedShape === 'circle') && (
+                            <div className="relative">
+                                <Button aria-label="fill" className="relative">
+                                    <input
+                                        type="color"
+                                        onChange={handleFillColorChange}
+                                        className="absolute inset-0 cursor-pointer opacity-0"
+                                    />
+                                    <PaintBucket className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                         <div className="relative">
                             <Button
                                 aria-label="stroke-color"
