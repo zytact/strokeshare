@@ -34,7 +34,7 @@ export function Help() {
                         </Link>
                         Made with ❤️ by{' '}
                         <Link
-                            href="https://zytact.in"
+                            href="https://zytact.com"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-semibold"
