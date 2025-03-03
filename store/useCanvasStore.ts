@@ -32,6 +32,7 @@ interface CanvasState {
     setRectangles: (rectangles: Rectangle[]) => void;
     setCircles: (circles: Circle[]) => void;
     setImages: (images: Image[]) => void;
+    clear: () => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -53,22 +54,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     setTextElements: (textElements) => {
         set({ textElements });
+        localStorage.setItem('texts', JSON.stringify({ textElements }));
     },
 
     setLines: (lines) => {
         set({ lines });
+        localStorage.setItem('lines', JSON.stringify({ lines }));
     },
 
     setRectangles: (rectangles) => {
         set({ rectangles });
+        localStorage.setItem('rectangles', JSON.stringify({ rectangles }));
     },
 
     setCircles: (circles) => {
         set({ circles });
+        localStorage.setItem('circles', JSON.stringify({ circles }));
     },
 
     setImages: (images) => {
         set({ images });
+        localStorage.setItem('images', JSON.stringify({ images }));
     },
 
     addToHistory: (
@@ -113,6 +119,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 circles: [...consolidatedState.circles],
                 images: [...consolidatedState.images],
             });
+
             return;
         }
         const isDrawLines = elements[0] && 'points' in elements[0];
@@ -160,6 +167,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 circles: [...history[newStep].circles],
                 images: [...history[newStep].images],
             });
+
+            localStorage.setItem(
+                'lines',
+                JSON.stringify({ lines: history[newStep].lines }),
+            );
+            localStorage.setItem(
+                'texts',
+                JSON.stringify({ textElements: history[newStep].textElements }),
+            );
+            localStorage.setItem(
+                'rectangles',
+                JSON.stringify({ rectangles: history[newStep].rectangles }),
+            );
+            localStorage.setItem(
+                'circles',
+                JSON.stringify({ circles: history[newStep].circles }),
+            );
+            localStorage.setItem(
+                'images',
+                JSON.stringify({ images: history[newStep].images }),
+            );
         }
     },
 
@@ -175,6 +203,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 circles: [...history[newStep].circles],
                 images: [...history[newStep].images],
             });
+
+            localStorage.setItem(
+                'lines',
+                JSON.stringify({ lines: history[newStep].lines }),
+            );
+            localStorage.setItem(
+                'texts',
+                JSON.stringify({ textElements: history[newStep].textElements }),
+            );
+            localStorage.setItem(
+                'rectangles',
+                JSON.stringify({ rectangles: history[newStep].rectangles }),
+            );
+            localStorage.setItem(
+                'circles',
+                JSON.stringify({ circles: history[newStep].circles }),
+            );
+            localStorage.setItem(
+                'images',
+                JSON.stringify({ images: history[newStep].images }),
+            );
         }
     },
 
@@ -184,5 +233,37 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     canRedo: () => {
         return get().currentStep < get().history.length - 1;
+    },
+
+    clear: () => {
+        set({
+            lines: [],
+            textElements: [],
+            rectangles: [],
+            circles: [],
+            images: [],
+            history: [
+                {
+                    lines: [],
+                    textElements: [],
+                    rectangles: [],
+                    circles: [],
+                    images: [],
+                },
+            ],
+            currentStep: 0,
+        });
+        try {
+            localStorage.removeItem('lines');
+            localStorage.removeItem('texts');
+            localStorage.removeItem('rectangles');
+            localStorage.removeItem('circles');
+            localStorage.removeItem('images');
+        } catch (error) {
+            console.warn(
+                'Failed to clear canvas data from localStorage:',
+                error,
+            );
+        }
     },
 }));
