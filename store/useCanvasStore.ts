@@ -189,23 +189,23 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
             localStorage.setItem(
                 'lines',
-                JSON.stringify(history[newStep].lines),
+                JSON.stringify({ lines: history[newStep].lines }),
             );
             localStorage.setItem(
                 'texts',
-                JSON.stringify(history[newStep].textElements),
+                JSON.stringify({ textElements: history[newStep].textElements }),
             );
             localStorage.setItem(
                 'rectangles',
-                JSON.stringify(history[newStep].rectangles),
+                JSON.stringify({ rectangles: history[newStep].rectangles }),
             );
             localStorage.setItem(
                 'circles',
-                JSON.stringify(history[newStep].circles),
+                JSON.stringify({ circles: history[newStep].circles }),
             );
             localStorage.setItem(
                 'images',
-                JSON.stringify(history[newStep].images),
+                JSON.stringify({ images: history[newStep].images }),
             );
         }
     },
@@ -225,23 +225,23 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
             localStorage.setItem(
                 'lines',
-                JSON.stringify(history[newStep].lines),
+                JSON.stringify({ lines: history[newStep].lines }),
             );
             localStorage.setItem(
                 'texts',
-                JSON.stringify(history[newStep].textElements),
+                JSON.stringify({ textElements: history[newStep].textElements }),
             );
             localStorage.setItem(
                 'rectangles',
-                JSON.stringify(history[newStep].rectangles),
+                JSON.stringify({ rectangles: history[newStep].rectangles }),
             );
             localStorage.setItem(
                 'circles',
-                JSON.stringify(history[newStep].circles),
+                JSON.stringify({ circles: history[newStep].circles }),
             );
             localStorage.setItem(
                 'images',
-                JSON.stringify(history[newStep].images),
+                JSON.stringify({ images: history[newStep].images }),
             );
         }
     },
