@@ -18,6 +18,7 @@ import {
     Circle as CircleIcon,
     Image as ImageIcon,
     FileUp,
+    Trash,
 } from 'lucide-react';
 import { TextSizeButtons } from './TextSizeButtons';
 import { StrokeWidth } from './StrokeWidth';
@@ -118,6 +119,7 @@ export default function CanvasButtons({
         setTextElements,
         circles,
         addToHistory,
+        clear,
     } = useCanvasStore();
 
     const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -552,6 +554,11 @@ export default function CanvasButtons({
                         />
                     </>
                 )}
+                <div>
+                    <Button aria-label="clear-canvas" onClick={clear}>
+                        <Trash className="h-4 w-4" />
+                    </Button>
+                </div>
                 <div className="block sm:hidden">
                     <DownloadPop
                         stagePos={stagePos}

@@ -113,6 +113,109 @@ export default function InfiniteCanvas() {
     };
 
     useEffect(() => {
+        const linesFromStorage = localStorage.getItem('lines');
+        const textElementsFromStorage = localStorage.getItem('texts');
+        const rectanglesFromStorage = localStorage.getItem('rectangles');
+        const circlesFromStorage = localStorage.getItem('circles');
+        const imagesFromStorage = localStorage.getItem('images');
+
+        if (linesFromStorage) {
+            try {
+                const parsedData = JSON.parse(linesFromStorage);
+                const parsedLines = parsedData && parsedData.lines;
+                if (Array.isArray(parsedLines)) {
+                    setLines(parsedLines);
+                } else {
+                    console.error('Lines data is not an array:', parsedLines);
+                }
+            } catch (error) {
+                console.error(
+                    'Failed to parse lines from localStorage:',
+                    error,
+                );
+            }
+        }
+
+        if (textElementsFromStorage) {
+            try {
+                const parsedData = JSON.parse(textElementsFromStorage);
+                const parsedTexts = parsedData && parsedData.textElements;
+                if (Array.isArray(parsedTexts)) {
+                    setTextElements(parsedTexts);
+                } else {
+                    console.error(
+                        'Text elements data is not an array:',
+                        parsedTexts,
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    'Failed to parse text elements from localStorage:',
+                    error,
+                );
+            }
+        }
+
+        if (rectanglesFromStorage) {
+            try {
+                const parsedData = JSON.parse(rectanglesFromStorage);
+                const parsedRectangles = parsedData && parsedData.rectangles;
+                if (Array.isArray(parsedRectangles)) {
+                    setRectangles(parsedRectangles);
+                } else {
+                    console.error(
+                        'Rectangles data is not an array:',
+                        parsedRectangles,
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    'Failed to parse rectangles from localStorage:',
+                    error,
+                );
+            }
+        }
+
+        if (circlesFromStorage) {
+            try {
+                const parsedData = JSON.parse(circlesFromStorage);
+                const parsedCircles = parsedData && parsedData.circles;
+                if (Array.isArray(parsedCircles)) {
+                    setCircles(parsedCircles);
+                } else {
+                    console.error(
+                        'Circles data is not an array:',
+                        parsedCircles,
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    'Failed to parse circles from localStorage:',
+                    error,
+                );
+            }
+        }
+
+        if (imagesFromStorage) {
+            try {
+                const parsedData = JSON.parse(imagesFromStorage);
+                const parsedImages = parsedData && parsedData.images;
+                if (Array.isArray(parsedImages)) {
+                    setImages(parsedImages);
+                } else {
+                    console.error('Images data is not an array:', parsedImages);
+                }
+            } catch (error) {
+                console.error(
+                    'Failed to parse images from localStorage:',
+                    error,
+                );
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
         if (!moveMode) {
             resetTransformer();
         }
