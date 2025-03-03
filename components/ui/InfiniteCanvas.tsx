@@ -119,12 +119,19 @@ export default function InfiniteCanvas() {
         const circlesFromStorage = localStorage.getItem('circles');
         const imagesFromStorage = localStorage.getItem('images');
 
+        let loadedLines: DrawLine[] = [];
+        let loadedTexts: TextElement[] = [];
+        let loadedRectangles: Rectangle[] = [];
+        let loadedCircles: Circle[] = [];
+        let loadedImages: Image[] = [];
+
         if (linesFromStorage) {
             try {
                 const parsedData = JSON.parse(linesFromStorage);
                 const parsedLines = parsedData && parsedData.lines;
                 if (Array.isArray(parsedLines)) {
                     setLines(parsedLines);
+                    loadedLines = parsedLines;
                 } else {
                     console.error('Lines data is not an array:', parsedLines);
                 }
@@ -142,6 +149,7 @@ export default function InfiniteCanvas() {
                 const parsedTexts = parsedData && parsedData.textElements;
                 if (Array.isArray(parsedTexts)) {
                     setTextElements(parsedTexts);
+                    loadedTexts = parsedTexts;
                 } else {
                     console.error(
                         'Text elements data is not an array:',
@@ -162,6 +170,7 @@ export default function InfiniteCanvas() {
                 const parsedRectangles = parsedData && parsedData.rectangles;
                 if (Array.isArray(parsedRectangles)) {
                     setRectangles(parsedRectangles);
+                    loadedRectangles = parsedRectangles;
                 } else {
                     console.error(
                         'Rectangles data is not an array:',
@@ -182,6 +191,7 @@ export default function InfiniteCanvas() {
                 const parsedCircles = parsedData && parsedData.circles;
                 if (Array.isArray(parsedCircles)) {
                     setCircles(parsedCircles);
+                    loadedCircles = parsedCircles;
                 } else {
                     console.error(
                         'Circles data is not an array:',
@@ -202,6 +212,7 @@ export default function InfiniteCanvas() {
                 const parsedImages = parsedData && parsedData.images;
                 if (Array.isArray(parsedImages)) {
                     setImages(parsedImages);
+                    loadedImages = parsedImages;
                 } else {
                     console.error('Images data is not an array:', parsedImages);
                 }
@@ -211,6 +222,23 @@ export default function InfiniteCanvas() {
                     error,
                 );
             }
+        }
+
+        // After loading all items from localStorage, add them to history all at once
+        if (
+            loadedLines.length > 0 ||
+            loadedTexts.length > 0 ||
+            loadedRectangles.length > 0 ||
+            loadedCircles.length > 0 ||
+            loadedImages.length > 0
+        ) {
+            addToHistory({
+                lines: loadedLines,
+                textElements: loadedTexts,
+                rectangles: loadedRectangles,
+                circles: loadedCircles,
+                images: loadedImages,
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
