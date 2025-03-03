@@ -119,26 +119,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 circles: [...consolidatedState.circles],
                 images: [...consolidatedState.images],
             });
-            localStorage.setItem(
-                'lines',
-                JSON.stringify(consolidatedState.lines),
-            );
-            localStorage.setItem(
-                'texts',
-                JSON.stringify(consolidatedState.textElements),
-            );
-            localStorage.setItem(
-                'rectangles',
-                JSON.stringify(consolidatedState.rectangles),
-            );
-            localStorage.setItem(
-                'circles',
-                JSON.stringify(consolidatedState.circles),
-            );
-            localStorage.setItem(
-                'images',
-                JSON.stringify(consolidatedState.images),
-            );
+
             return;
         }
         const isDrawLines = elements[0] && 'points' in elements[0];
