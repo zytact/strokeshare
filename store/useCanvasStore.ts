@@ -253,6 +253,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             ],
             currentStep: 0,
         });
-        localStorage.clear();
+        try {
+            localStorage.removeItem('lines');
+            localStorage.removeItem('texts');
+            localStorage.removeItem('rectangles');
+            localStorage.removeItem('circles');
+            localStorage.removeItem('images');
+        } catch (error) {
+            console.warn(
+                'Failed to clear canvas data from localStorage:',
+                error,
+            );
+        }
     },
 }));
