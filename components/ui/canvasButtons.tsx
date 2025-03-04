@@ -144,30 +144,35 @@ export default function CanvasButtons({
                 // Import all canvas elements
                 const elements = jsonData.elements;
 
+                // Set all the elements individually
                 if (elements.lines) {
                     setLines(elements.lines);
-                    addToHistory(elements.lines);
                 }
 
                 if (elements.textElements) {
                     setTextElements(elements.textElements);
-                    addToHistory(elements.textElements);
                 }
 
                 if (elements.rectangles) {
                     setRectangles(elements.rectangles);
-                    addToHistory(elements.rectangles);
                 }
 
                 if (elements.circles) {
                     setCircles(elements.circles);
-                    addToHistory(elements.circles);
                 }
 
                 if (elements.images) {
                     setImages(elements.images);
-                    addToHistory(elements.images);
                 }
+
+                // Add everything to history at once as a consolidated state
+                addToHistory({
+                    lines: elements.lines || [],
+                    textElements: elements.textElements || [],
+                    rectangles: elements.rectangles || [],
+                    circles: elements.circles || [],
+                    images: elements.images || [],
+                });
 
                 // Reset the file input
                 e.target.value = '';
