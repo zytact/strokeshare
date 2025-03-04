@@ -23,7 +23,7 @@ import {
     getDistanceToLineSegment,
 } from '@/lib/eraserUtils';
 
-import { getTextRotation, getTextPosition } from '@/lib/textUtils';
+import { getTextRotation } from '@/lib/textUtils';
 import CanvasButtons from './canvasButtons';
 
 interface LoadedImageProps
@@ -1246,16 +1246,20 @@ export default function InfiniteCanvas() {
         if (!textarea || !stage) return;
 
         const textNode = stage.findOne(`#${textId}`) as Konva.Text;
-        const position = getTextPosition(textNode, stage);
+        const textPosition = textNode.absolutePosition();
+        const rotation = getTextRotation(textNode);
 
         // Position textarea for touch input
         textarea.style.position = 'fixed';
-        textarea.style.top = `${position.y}px`;
-        textarea.style.left = `${position.x}px`;
+        textarea.style.top = `${textPosition.y}px`;
+        textarea.style.left = `${textPosition.x}px`;
         textarea.style.display = 'block';
-        textarea.style.fontSize = `${text.fontSize}px`;
-        textarea.style.width = '80%'; // Use percentage for better mobile experience
-        textarea.style.height = 'auto';
+        textarea.style.fontSize = `${text.fontSize * stageScale}px`;
+        textarea.style.transform = `rotate(${rotation}deg)`;
+        textarea.style.transformOrigin = 'left top';
+        textarea.style.width = `${window.innerWidth - textPosition.x}px`; // Set exact width
+        textarea.style.height = `${window.innerHeight - textPosition.y}px`; // Set exact height
+        textarea.value = text.text;
         textarea.focus();
     };
 
@@ -1504,7 +1508,7 @@ export default function InfiniteCanvas() {
         textarea.style.display = 'block';
         textarea.style.width = `${window.innerWidth - point.x}px`;
         textarea.style.height = `${window.innerHeight - point.y}px`;
-        textarea.style.fontSize = `${newTextSize}px`; // Update textarea font size
+        textarea.style.fontSize = `${newTextSize * stageScale}px`;
         textarea.focus();
     };
 
@@ -1524,21 +1528,64 @@ export default function InfiniteCanvas() {
         if (!textarea || !stage) return;
 
         const textNode = stage.findOne(`#${textId}`) as Konva.Text;
-        const position = getTextPosition(textNode, stage);
+        const textPosition = textNode.absolutePosition();
         const rotation = getTextRotation(textNode);
 
         // Apply the same transformations to textarea
         textarea.style.position = 'fixed';
-        textarea.style.top = `${position.y}px`;
-        textarea.style.left = `${position.x}px`;
+        textarea.style.top = `${textPosition.y}px`;
+        textarea.style.left = `${textPosition.x}px`;
         textarea.style.display = 'block';
-        textarea.style.fontSize = `${text.fontSize}px`;
+        textarea.style.fontSize = `${text.fontSize * stageScale}px`;
         textarea.style.transform = `rotate(${rotation}deg)`;
         textarea.style.transformOrigin = 'left top';
-        textarea.style.width = `${window.innerWidth - position.x}px`; // Set exact width
-        textarea.style.height = `${window.innerHeight - position.y}px`; // Set exact height
+        textarea.style.width = `${window.innerWidth - textPosition.x}px`; // Set exact width
+        textarea.style.height = `${window.innerHeight - textPosition.y}px`; // Set exact height
+        textarea.value = text.text;
         textarea.focus();
     };
+
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            if (isDragging) {
+                setIsDragging(false);
+            }
+            if (isDrawing) {
+                setIsDrawing(false);
+                addToHistory(lines);
+            }
+            if (isErasing) {
+                setIsErasing(false);
+                const currentState = {
+                    lines,
+                    textElements,
+                    rectangles,
+                    circles,
+                    images,
+                };
+                addToHistory(currentState);
+            }
+        };
+
+        // Add global event listeners
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('touchend', handleGlobalMouseUp);
+
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('touchend', handleGlobalMouseUp);
+        };
+    }, [
+        isDragging,
+        isDrawing,
+        isErasing,
+        addToHistory,
+        lines,
+        textElements,
+        rectangles,
+        circles,
+        images,
+    ]);
 
     useEffect(() => {
         if (eraserMode) {
@@ -1741,9 +1788,9 @@ export default function InfiniteCanvas() {
                     lineHeight: '1.2',
                     fontSize: `${
                         selectedTextId
-                            ? textElements.find((t) => t.id === selectedTextId)
-                                  ?.fontSize
-                            : newTextSize
+                            ? (textElements.find((t) => t.id === selectedTextId)
+                                  ?.fontSize ?? newTextSize) * stageScale
+                            : newTextSize * stageScale
                     }px`,
                 }}
                 className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont outline-none"
