@@ -702,7 +702,8 @@ export default function InfiniteCanvas() {
             !lineSegmentMode &&
             !arrowMode &&
             !rectangleMode &&
-            !circleMode
+            !circleMode &&
+            !textMode
         ) {
             setIsDrawing(true);
             setLines([
@@ -1460,6 +1461,9 @@ export default function InfiniteCanvas() {
         const stage = e.target.getStage();
         if (!stage) return;
 
+        const clickedOnEmpty = e.target === stage;
+        if (!clickedOnEmpty) return;
+
         const point = stage.getPointerPosition();
         if (!point) return;
 
@@ -1473,7 +1477,7 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: newTextSize, // Use newTextSize instead of hardcoded value
+            fontSize: newTextSize,
             fill: currentColor,
             id: newId,
         };
