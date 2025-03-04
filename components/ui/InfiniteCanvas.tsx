@@ -890,35 +890,7 @@ export default function InfiniteCanvas() {
     };
 
     const handleMouseUp = () => {
-        if (isDragging) {
-            setIsDragging(false);
-        }
-        if (isDrawing) {
-            setIsDrawing(false);
-            addToHistory(lines);
-        }
-        if (isErasing) {
-            setIsErasing(false);
-            const currentState = {
-                lines,
-                textElements,
-                rectangles,
-                circles,
-                images,
-            };
-            addToHistory(currentState);
-        }
-        if (rectangleMode) {
-            // Add history even if no startPoint to ensure proper state update
-            addToHistory(rectangles);
-            // Reset startPoint to allow drawing new rectangles
-            setStartPoint(null);
-        }
-        if (circleMode) {
-            addToHistory(circles);
-            // Reset startPoint to allow drawing new circles
-            setStartPoint(null);
-        }
+        resetInteractionStates();
     };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
@@ -1437,35 +1409,7 @@ export default function InfiniteCanvas() {
 
     const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
         e.evt.preventDefault();
-        if (isDragging) {
-            setIsDragging(false);
-        }
-        if (isDrawing) {
-            setIsDrawing(false);
-            addToHistory(lines);
-        }
-        if (isErasing) {
-            setIsErasing(false);
-            const currentState = {
-                lines,
-                textElements,
-                rectangles,
-                circles,
-                images,
-            };
-            addToHistory(currentState);
-        }
-        if (rectangleMode) {
-            // Add history even if no startPoint to ensure proper state update
-            addToHistory(rectangles);
-            // Reset startPoint to allow drawing new rectangles
-            setStartPoint(null);
-        }
-        if (circleMode) {
-            addToHistory(circles);
-            // Reset startPoint to allow drawing new circles
-            setStartPoint(null);
-        }
+        resetInteractionStates();
     };
 
     const handleStageClick = (e: KonvaEventObject<MouseEvent>) => {
@@ -1545,26 +1489,41 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
+    const resetInteractionStates = () => {
+        if (isDragging) {
+            setIsDragging(false);
+        }
+        if (isDrawing) {
+            setIsDrawing(false);
+            addToHistory(lines);
+        }
+        if (isErasing) {
+            setIsErasing(false);
+            const currentState = {
+                lines,
+                textElements,
+                rectangles,
+                circles,
+                images,
+            };
+            addToHistory(currentState);
+        }
+        if (rectangleMode) {
+            // Add history even if no startPoint to ensure proper state update
+            addToHistory(rectangles);
+            // Reset startPoint to allow drawing new rectangles
+            setStartPoint(null);
+        }
+        if (circleMode) {
+            addToHistory(circles);
+            // Reset startPoint to allow drawing new circles
+            setStartPoint(null);
+        }
+    };
+
     useEffect(() => {
         const handleGlobalMouseUp = () => {
-            if (isDragging) {
-                setIsDragging(false);
-            }
-            if (isDrawing) {
-                setIsDrawing(false);
-                addToHistory(lines);
-            }
-            if (isErasing) {
-                setIsErasing(false);
-                const currentState = {
-                    lines,
-                    textElements,
-                    rectangles,
-                    circles,
-                    images,
-                };
-                addToHistory(currentState);
-            }
+            resetInteractionStates();
         };
 
         // Add global event listeners
@@ -1585,6 +1544,7 @@ export default function InfiniteCanvas() {
         rectangles,
         circles,
         images,
+        resetInteractionStates,
     ]);
 
     useEffect(() => {
