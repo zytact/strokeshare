@@ -549,12 +549,6 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (evt.button === 2) {
-            setIsDragging(true);
-            lastPointerPosition.current = point;
-            return;
-        }
-
         if (evt.button === 0 && eraserMode) {
             setIsErasing(true);
             return;
@@ -1022,7 +1016,7 @@ export default function InfiniteCanvas() {
     };
 
     const handleContextMenu = (e: KonvaEventObject<MouseEvent>) => {
-        e.evt.preventDefault();
+        e.evt.preventDefault(); // Still prevent context menu from showing
     };
 
     const handleTouchStart = (e: KonvaEventObject<TouchEvent>) => {
