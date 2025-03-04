@@ -475,8 +475,10 @@ export default function InfiniteCanvas() {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey) {
                 if (e.key === 'z') {
+                    e.preventDefault();
                     undo();
                 } else if (e.key === 'y') {
+                    e.preventDefault();
                     redo();
                 } else if (e.key === 'c') {
                     // Copy selected element
@@ -544,12 +546,6 @@ export default function InfiniteCanvas() {
         if (!point) return;
 
         if (dragModeEnabled && evt.button === 0) {
-            setIsDragging(true);
-            lastPointerPosition.current = point;
-            return;
-        }
-
-        if (evt.button === 2) {
             setIsDragging(true);
             lastPointerPosition.current = point;
             return;
@@ -706,7 +702,8 @@ export default function InfiniteCanvas() {
             !lineSegmentMode &&
             !arrowMode &&
             !rectangleMode &&
-            !circleMode
+            !circleMode &&
+            !textMode
         ) {
             setIsDrawing(true);
             setLines([
@@ -1022,7 +1019,7 @@ export default function InfiniteCanvas() {
     };
 
     const handleContextMenu = (e: KonvaEventObject<MouseEvent>) => {
-        e.evt.preventDefault();
+        e.evt.preventDefault(); // Still prevent context menu from showing
     };
 
     const handleTouchStart = (e: KonvaEventObject<TouchEvent>) => {
@@ -1175,7 +1172,16 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
+        if (
+            !dragModeEnabled &&
+            !moveMode &&
+            !lineSegmentMode &&
+            !eraserMode &&
+            !arrowMode &&
+            !rectangleMode &&
+            circleMode &&
+            !textMode
+        ) {
             setIsDrawing(true);
             setLines([
                 ...lines,
@@ -1464,6 +1470,9 @@ export default function InfiniteCanvas() {
         const stage = e.target.getStage();
         if (!stage) return;
 
+        const clickedOnEmpty = e.target === stage;
+        if (!clickedOnEmpty) return;
+
         const point = stage.getPointerPosition();
         if (!point) return;
 
@@ -1477,7 +1486,7 @@ export default function InfiniteCanvas() {
             x: stagePoint.x,
             y: stagePoint.y,
             text: '',
-            fontSize: newTextSize, // Use newTextSize instead of hardcoded value
+            fontSize: newTextSize,
             fill: currentColor,
             id: newId,
         };
@@ -2327,18 +2336,6 @@ export default function InfiniteCanvas() {
                                         ? '#ffffff'
                                         : '#000000'
                                 }
-                                boundBoxFunc={(oldBox, newBox) => {
-                                    // Limit resize
-                                    const maxWidth = 800;
-                                    const maxHeight = 800;
-                                    if (
-                                        newBox.width > maxWidth ||
-                                        newBox.height > maxHeight
-                                    ) {
-                                        return oldBox;
-                                    }
-                                    return newBox;
-                                }}
                             />
                         )}
                     </Layer>
