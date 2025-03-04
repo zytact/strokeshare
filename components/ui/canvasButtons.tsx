@@ -555,7 +555,13 @@ export default function CanvasButtons({
                     </>
                 )}
                 <div>
-                    <Button aria-label="clear-canvas" onClick={clear}>
+                    <Button
+                        aria-label="clear-canvas"
+                        onClick={() => {
+                            clear();
+                            disableAllModes();
+                        }}
+                    >
                         <Trash className="h-4 w-4" />
                     </Button>
                 </div>
