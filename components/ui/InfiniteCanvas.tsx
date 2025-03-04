@@ -1172,7 +1172,16 @@ export default function InfiniteCanvas() {
             return;
         }
 
-        if (!dragModeEnabled && !moveMode && !lineSegmentMode) {
+        if (
+            !dragModeEnabled &&
+            !moveMode &&
+            !lineSegmentMode &&
+            !eraserMode &&
+            !arrowMode &&
+            !rectangleMode &&
+            circleMode &&
+            !textMode
+        ) {
             setIsDrawing(true);
             setLines([
                 ...lines,
