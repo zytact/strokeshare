@@ -475,8 +475,10 @@ export default function InfiniteCanvas() {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey) {
                 if (e.key === 'z') {
+                    e.preventDefault();
                     undo();
                 } else if (e.key === 'y') {
+                    e.preventDefault();
                     redo();
                 } else if (e.key === 'c') {
                     // Copy selected element
