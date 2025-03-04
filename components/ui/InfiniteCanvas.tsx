@@ -2323,18 +2323,6 @@ export default function InfiniteCanvas() {
                                         ? '#ffffff'
                                         : '#000000'
                                 }
-                                boundBoxFunc={(oldBox, newBox) => {
-                                    // Limit resize
-                                    const maxWidth = 800;
-                                    const maxHeight = 800;
-                                    if (
-                                        newBox.width > maxWidth ||
-                                        newBox.height > maxHeight
-                                    ) {
-                                        return oldBox;
-                                    }
-                                    return newBox;
-                                }}
                             />
                         )}
                     </Layer>
