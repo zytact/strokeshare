@@ -1151,7 +1151,7 @@ export default function InfiniteCanvas() {
             !eraserMode &&
             !arrowMode &&
             !rectangleMode &&
-            circleMode &&
+            !circleMode &&
             !textMode
         ) {
             setIsDrawing(true);
