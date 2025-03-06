@@ -1508,13 +1508,13 @@ export default function InfiniteCanvas() {
             };
             addToHistory(currentState);
         }
-        if (rectangleMode) {
+        if (rectangleMode && startPoint) {
             // Add history even if no startPoint to ensure proper state update
             addToHistory(rectangles);
             // Reset startPoint to allow drawing new rectangles
             setStartPoint(null);
         }
-        if (circleMode) {
+        if (circleMode && startPoint) {
             addToHistory(circles);
             // Reset startPoint to allow drawing new circles
             setStartPoint(null);
@@ -1531,6 +1531,7 @@ export default function InfiniteCanvas() {
         circles,
         textElements,
         images,
+        startPoint,
     ]);
 
     useEffect(() => {
