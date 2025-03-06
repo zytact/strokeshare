@@ -9,7 +9,7 @@ import {
     Circle,
     Image,
 } from 'react-konva';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { KonvaEventObject } from 'konva/lib/Node';
 import Konva from 'konva';
 import { useTheme } from 'next-themes';
@@ -1489,7 +1489,7 @@ export default function InfiniteCanvas() {
         textarea.focus();
     };
 
-    const resetInteractionStates = () => {
+    const resetInteractionStates = useCallback(() => {
         if (isDragging) {
             setIsDragging(false);
         }
@@ -1519,7 +1519,19 @@ export default function InfiniteCanvas() {
             // Reset startPoint to allow drawing new circles
             setStartPoint(null);
         }
-    };
+    }, [
+        addToHistory,
+        circleMode,
+        isDragging,
+        isDrawing,
+        isErasing,
+        lines,
+        rectangleMode,
+        rectangles,
+        circles,
+        textElements,
+        images,
+    ]);
 
     useEffect(() => {
         const handleGlobalMouseUp = () => {
