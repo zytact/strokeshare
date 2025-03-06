@@ -1702,6 +1702,67 @@ export default function InfiniteCanvas() {
 
     const [newTextSize, setNewTextSize] = useState(30);
 
+    const shapeOnClickHandler = (
+        e: KonvaEventObject<MouseEvent | TouchEvent>,
+        i: number,
+        shape: ShapeType,
+    ) => {
+        if (moveMode) {
+            e.cancelBubble = true;
+            const transformer = transformerRef.current;
+            if (transformer) {
+                transformer.nodes([e.target]);
+                transformer.getLayer()?.batchDraw();
+            }
+            setSelectedId(String(i));
+            setSelectedShape(shape);
+        } else if (textMode) {
+            e.cancelBubble = true; // Prevent bubbling
+
+            // Get stage and pointer position
+            const stage = e.target.getStage();
+            if (!stage) return;
+
+            const point = stage.getPointerPosition();
+            if (!point) return;
+
+            // Create text at click position
+            const stagePoint = {
+                x: (point.x - stagePos.x) / stageScale,
+                y: (point.y - stagePos.y) / stageScale,
+            };
+
+            const newId = `text-${Date.now()}`;
+            const newText: TextElement = {
+                x: stagePoint.x,
+                y: stagePoint.y,
+                text: '',
+                fontSize: newTextSize,
+                fill: currentColor,
+                id: newId,
+            };
+
+            setTextElements([...textElements, newText]);
+            setSelectedTextId(newId);
+            setEditingText('');
+
+            // Position and show textarea for editing
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            textarea.style.position = 'fixed';
+            textarea.style.top = `${point.y}px`;
+            textarea.style.left = `${point.x}px`;
+            textarea.style.display = 'block';
+            textarea.style.width = `${window.innerWidth - point.x}px`;
+            textarea.style.height = `${window.innerHeight - point.y}px`;
+            textarea.style.fontSize = `${newTextSize * stageScale}px`;
+            textarea.focus();
+        } else {
+            e.cancelBubble = true;
+        }
+    };
+
     return (
         <>
             <CanvasButtons
@@ -1843,7 +1904,7 @@ export default function InfiniteCanvas() {
                     scale={{ x: stageScale, y: stageScale }}
                 >
                     <Layer data-testid="layer">
-                        {images.map((image) => (
+                        {images.map((image, i) => (
                             <LoadedImage
                                 key={image.id}
                                 id={`image-${image.id}`} // Ensure consistent ID format
@@ -1854,49 +1915,13 @@ export default function InfiniteCanvas() {
                                 width={image.width}
                                 height={image.height}
                                 draggable={moveMode}
-                                onClick={(e: KonvaEventObject<Event>) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
+                                onClick={(e: KonvaEventObject<MouseEvent>) => {
+                                    shapeOnClickHandler(e, i, 'image');
                                 }}
                                 onTouchStart={(
                                     e: KonvaEventObject<TouchEvent>,
                                 ) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-
-                                        if (
-                                            selectedShape !== 'image' ||
-                                            selectedId !== image.id
-                                        ) {
-                                            const transformer =
-                                                transformerRef.current;
-                                            if (transformer) {
-                                                transformer.nodes([e.target]);
-                                                transformer
-                                                    .getLayer()
-                                                    ?.batchDraw();
-                                            }
-                                            setSelectedId(image.id);
-                                            setSelectedShape('image');
-                                        }
-                                    }
+                                    shapeOnClickHandler(e, i, 'image');
                                 }}
                                 onTransformEnd={(
                                     e: KonvaEventObject<Event>,
@@ -2081,30 +2106,10 @@ export default function InfiniteCanvas() {
                                 draggable={moveMode}
                                 fill={rect.fill}
                                 onClick={(e) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
-                                        }
-                                        setSelectedId(String(i));
-                                        setSelectedShape('rectangle');
-                                    }
+                                    shapeOnClickHandler(e, i, 'rectangle');
                                 }}
                                 onTouchStart={(e) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
-                                        }
-                                        setSelectedId(String(i));
-                                        setSelectedShape('rectangle');
-                                    }
+                                    shapeOnClickHandler(e, i, 'rectangle');
                                 }}
                                 onTransformEnd={(e) => {
                                     const node = e.target;
@@ -2164,30 +2169,10 @@ export default function InfiniteCanvas() {
                                 draggable={moveMode}
                                 fill={circle.fill}
                                 onClick={(e) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
-                                        }
-                                        setSelectedId(String(i));
-                                        setSelectedShape('circle');
-                                    }
+                                    shapeOnClickHandler(e, i, 'circle');
                                 }}
                                 onTouchStart={(e) => {
-                                    if (moveMode) {
-                                        e.cancelBubble = true;
-                                        const transformer =
-                                            transformerRef.current;
-                                        if (transformer) {
-                                            transformer.nodes([e.target]);
-                                            transformer.getLayer()?.batchDraw();
-                                        }
-                                        setSelectedId(String(i));
-                                        setSelectedShape('circle');
-                                    }
+                                    shapeOnClickHandler(e, i, 'circle');
                                 }}
                                 onTransformEnd={(e) => {
                                     const node = e.target;
