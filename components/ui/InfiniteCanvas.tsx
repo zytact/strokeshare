@@ -1771,8 +1771,6 @@ export default function InfiniteCanvas() {
             textarea.style.height = `${window.innerHeight - point.y}px`;
             textarea.style.fontSize = `${newTextSize * stageScale}px`;
             textarea.focus();
-        } else {
-            e.cancelBubble = true;
         }
     };
 
