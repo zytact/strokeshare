@@ -15,7 +15,7 @@ const Label = ({
     className,
     ...props
 }: React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> & {
-    ref: React.RefObject<React.ComponentRef<typeof LabelPrimitive.Root>>;
+    ref?: React.RefObject<React.ComponentRef<typeof LabelPrimitive.Root>>;
 }) => (
     <LabelPrimitive.Root
         ref={ref}

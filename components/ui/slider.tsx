@@ -10,7 +10,7 @@ const Slider = ({
     className,
     ...props
 }: React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & {
-    ref: React.RefObject<React.ComponentRef<typeof SliderPrimitive.Root>>;
+    ref?: React.RefObject<React.ComponentRef<typeof SliderPrimitive.Root>>;
 }) => (
     <SliderPrimitive.Root
         ref={ref}

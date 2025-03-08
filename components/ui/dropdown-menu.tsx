@@ -123,7 +123,7 @@ const DropdownMenuCheckboxItem = ({
     checked,
     ...props
 }: React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem> & {
-    ref: React.RefObject<
+    ref?: React.RefObject<
         React.ComponentRef<typeof DropdownMenuPrimitive.CheckboxItem>
     >;
 }) => (
