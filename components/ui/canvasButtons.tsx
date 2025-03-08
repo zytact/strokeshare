@@ -186,7 +186,7 @@ export default function CanvasButtons({
 
     return (
         <>
-            <div className="fixed z-20 ml-2 mt-2 flex flex-col gap-2 sm:flex-row">
+            <div className="fixed z-20 mt-2 ml-2 flex flex-col gap-2 sm:flex-row">
                 <div className="relative">
                     <Button variant="default">
                         <input
@@ -195,7 +195,7 @@ export default function CanvasButtons({
                             onChange={handleImportJSON}
                             className="absolute inset-0 cursor-pointer opacity-0"
                         />
-                        <FileUp className="h-4 w-4" />
+                        <FileUp className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -211,7 +211,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <Hand className="h-4 w-4" />
+                        <Hand className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -227,7 +227,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <MoveUpLeft className="h-4 w-4" />
+                        <MoveUpLeft className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -243,7 +243,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <Eraser className="h-4 w-4" />{' '}
+                        <Eraser className="size-4" />{' '}
                     </Button>
                 </div>
                 <div>
@@ -281,7 +281,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <LineIcon className="h-4 w-4" />
+                        <LineIcon className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -297,7 +297,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -313,7 +313,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <Square className="h-4 w-4" />
+                        <Square className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -329,7 +329,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <CircleIcon className="h-4 w-4" />
+                        <CircleIcon className="size-4" />
                     </Button>
                 </div>
                 <div className="relative">
@@ -340,7 +340,7 @@ export default function CanvasButtons({
                             onChange={handleImageUpload}
                             className="absolute inset-0 cursor-pointer opacity-0"
                         />
-                        <ImageIcon className="h-4 w-4" />
+                        <ImageIcon className="size-4" />
                     </Button>
                 </div>
                 <div>
@@ -411,7 +411,7 @@ export default function CanvasButtons({
                             }
                         }}
                     >
-                        <SquareDashed className="h-4 w-4" />
+                        <SquareDashed className="size-4" />
                     </Button>
                 </div>
                 {moveMode && (
@@ -425,7 +425,7 @@ export default function CanvasButtons({
                                         onChange={handleFillColorChange}
                                         className="absolute inset-0 cursor-pointer opacity-0"
                                     />
-                                    <PaintBucket className="h-4 w-4" />
+                                    <PaintBucket className="size-4" />
                                 </Button>
                             </div>
                         )}
@@ -517,7 +517,7 @@ export default function CanvasButtons({
                                     className="absolute inset-0 cursor-pointer opacity-0"
                                     disabled={!selectedShape}
                                 />
-                                <Palette className="h-4 w-4" />
+                                <Palette className="size-4" />
                             </Button>
                         </div>
                     </>
@@ -525,7 +525,7 @@ export default function CanvasButtons({
                 {!eraserMode && (
                     <>
                         <div>
-                            <Button className="p-2 backdrop-blur">
+                            <Button className="p-2 backdrop-blur-sm">
                                 <input
                                     aria-label="draw-color"
                                     type="color"
@@ -567,7 +567,7 @@ export default function CanvasButtons({
                             disableAllModes();
                         }}
                     >
-                        <Trash className="h-4 w-4" />
+                        <Trash className="size-4" />
                     </Button>
                 </div>
                 <div className="block sm:hidden">
@@ -579,7 +579,7 @@ export default function CanvasButtons({
                     />
                 </div>
             </div>
-            <div className="fixed bottom-16 right-4 z-20 block sm:hidden">
+            <div className="fixed right-4 bottom-16 z-20 block sm:hidden">
                 {moveMode && (
                     <TextSizeButtons
                         className="flex flex-col items-center gap-2 sm:hidden"
@@ -603,7 +603,7 @@ export default function CanvasButtons({
                     onClick={undo}
                     disabled={!canUndo()}
                 >
-                    <Undo2 className="h-4 w-4" />
+                    <Undo2 className="size-4" />
                 </Button>
                 <Button
                     aria-label="redo"
@@ -611,17 +611,17 @@ export default function CanvasButtons({
                     onClick={redo}
                     disabled={!canRedo()}
                 >
-                    <Redo2 className="h-4 w-4" />
+                    <Redo2 className="size-4" />
                 </Button>
-                <div className="mx-2 h-8 w-px bg-border" />
+                <div className="bg-border mx-2 h-8 w-px" />
                 <Button
                     aria-label="zoom-in"
                     variant="default"
                     onClick={() => handleZoom(true)}
                 >
-                    <ZoomIn className="h-4 w-4" />
+                    <ZoomIn className="size-4" />
                 </Button>
-                <div className="flex h-10 min-w-[4rem] items-center justify-center rounded-md bg-secondary px-2 text-sm">
+                <div className="bg-secondary flex h-10 min-w-[4rem] items-center justify-center rounded-md px-2 text-sm">
                     {Math.round(stageScale * 100)}%
                 </div>
                 <Button
@@ -629,9 +629,9 @@ export default function CanvasButtons({
                     variant="default"
                     onClick={() => handleZoom(false)}
                 >
-                    <ZoomOut className="h-4 w-4" />
+                    <ZoomOut className="size-4" />
                 </Button>
-                <div className="mx-2 hidden h-8 w-px bg-border sm:block" />
+                <div className="bg-border mx-2 hidden h-8 w-px sm:block" />
                 <DownloadPop
                     stagePos={stagePos}
                     stageRef={stageRef}
@@ -640,7 +640,7 @@ export default function CanvasButtons({
                     className="hidden sm:block"
                 />
             </div>
-            <div className="fixed bottom-4 right-4 z-20 hidden sm:block">
+            <div className="fixed right-4 bottom-4 z-20 hidden sm:block">
                 <Help />
             </div>
         </>

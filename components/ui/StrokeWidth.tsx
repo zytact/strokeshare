@@ -21,7 +21,7 @@ export function StrokeWidth({
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="default" className="flex items-center gap-2">
-                    <MoveHorizontal className="h-4 w-4" />
+                    <MoveHorizontal className="size-4" />
                     <span className="hidden text-sm sm:block">
                         {strokeWidth}px
                     </span>
@@ -29,7 +29,7 @@ export function StrokeWidth({
             </PopoverTrigger>
             <PopoverContent className="w-80">
                 <div className="flex flex-col gap-4">
-                    <h4 className="font-medium leading-none">Stroke Width</h4>
+                    <h4 className="leading-none font-medium">Stroke Width</h4>
                     <Slider
                         defaultValue={[strokeWidth]}
                         max={20}

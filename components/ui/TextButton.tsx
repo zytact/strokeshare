@@ -63,7 +63,7 @@ export default function TextButton({
                     variant={textMode ? 'secondary' : 'default'}
                     onClick={handleButtonClick}
                 >
-                    <Type className="h-4 w-4" />
+                    <Type className="size-4" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-48">
