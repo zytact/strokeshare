@@ -1825,7 +1825,7 @@ export default function InfiniteCanvas() {
                             : newTextSize * stageScale
                     }px`,
                 }}
-                className="fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 font-excalifont outline-none"
+                className="font-excalifont fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 outline-hidden"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {

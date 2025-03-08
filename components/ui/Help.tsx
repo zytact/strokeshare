@@ -18,7 +18,7 @@ export function Help() {
                     aria-label="Show help and keyboard shortcuts"
                     className="flex w-9 items-center gap-2"
                 >
-                    <CircleHelp className="h-4 w-4" />
+                    <CircleHelp className="size-4" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-60 sm:w-72">
@@ -30,7 +30,7 @@ export function Help() {
                             rel="noopener noreferrer"
                             className="mt-1"
                         >
-                            <Github className="h-4 w-4" />
+                            <Github className="size-4" />
                         </Link>
                         Made with ❤️ by{' '}
                         <Link

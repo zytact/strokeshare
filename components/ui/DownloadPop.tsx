@@ -316,19 +316,19 @@ export function DownloadPop({
                     variant="default"
                     className={cn('flex items-center gap-2', className)}
                 >
-                    <Download className="h-4 w-4" />
+                    <Download className="size-4" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
                 <div className="flex flex-col gap-4">
-                    <h4 className="font-medium leading-none">Download</h4>
+                    <h4 className="leading-none font-medium">Download</h4>
                     <div className="flex flex-col gap-2">
                         <Button
                             variant="default"
                             className="flex items-center gap-2"
                             onClick={handleSVG}
                         >
-                            <Download className="h-4 w-4" />
+                            <Download className="size-4" />
                             <span>SVG</span>
                         </Button>
                         <Button
@@ -336,7 +336,7 @@ export function DownloadPop({
                             className="flex items-center gap-2"
                             onClick={handlePNG}
                         >
-                            <Download className="h-4 w-4" />
+                            <Download className="size-4" />
                             <span>PNG</span>
                         </Button>
                         <Button
@@ -344,7 +344,7 @@ export function DownloadPop({
                             className="flex items-center gap-2"
                             onClick={handleJSON}
                         >
-                            <Download className="h-4 w-4" />
+                            <Download className="size-4" />
                             <span>Save to Disk</span>
                         </Button>
                         <Button
@@ -365,14 +365,14 @@ export function DownloadPop({
                             {wasCopied ? (
                                 <Check
                                     className={cn(
-                                        'h-4 w-4 transition-opacity duration-700',
+                                        'size-4 transition-opacity duration-700',
                                         isFading ? 'opacity-100' : 'opacity-0',
                                     )}
                                 />
                             ) : (
                                 <Copy
                                     className={cn(
-                                        'h-4 w-4 transition-opacity duration-300',
+                                        'size-4 transition-opacity duration-300',
                                         wasCopied ? 'opacity-0' : 'opacity-100',
                                     )}
                                 />
