@@ -186,7 +186,7 @@ export default function CanvasButtons({
 
     return (
         <>
-            <div className="fixed z-20 mt-2 ml-2 flex flex-col gap-2 sm:flex-row">
+            <div className="fixed z-20 mt-2 ml-2 flex flex-col gap-1 sm:flex-row sm:gap-2">
                 <div className="relative">
                     <Button variant="default">
                         <input
