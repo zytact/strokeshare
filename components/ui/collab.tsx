@@ -17,6 +17,7 @@ export function Collab() {
     const { setRoomId } = useRoomStore();
     const [roomLink, setRoomLink] = useState<string>('');
     const [copied, setCopied] = useState<boolean>(false);
+    const [isOpen, setIsOpen] = useState<boolean>(false);
 
     useEffect(() => {
         const newRoomId = uuidv4().substring(0, 8);
@@ -28,6 +29,18 @@ export function Collab() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        if (isOpen && roomLink) {
+            window.history.pushState(
+                { roomId: roomLink.split('/').pop() },
+                '',
+                roomLink,
+            );
+        } else if (!isOpen && window.location.pathname.includes('/room/')) {
+            window.history.pushState({}, '', window.location.origin);
+        }
+    }, [isOpen, roomLink]);
+
     const copyToClipboard = () => {
         navigator.clipboard.writeText(roomLink);
         setCopied(true);
@@ -35,7 +48,7 @@ export function Collab() {
     };
 
     return (
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant="default"
