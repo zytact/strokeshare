@@ -10,10 +10,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Users, Copy, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useRoomStore } from '@/store/useRoomStore';
 
 export function Collab() {
     const [name, setName] = useState<string>('');
-    const [roomId, setRoomId] = useState<string>('');
+    const { setRoomId } = useRoomStore();
     const [roomLink, setRoomLink] = useState<string>('');
     const [copied, setCopied] = useState<boolean>(false);
 
@@ -24,6 +25,7 @@ export function Collab() {
         // Create the full room link
         const baseUrl = window.location.origin;
         setRoomLink(`${baseUrl}/room/${newRoomId}`);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const copyToClipboard = () => {

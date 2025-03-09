@@ -66,6 +66,7 @@ interface CanvasButtonsProps {
     selectedId: string | null;
     disableAllModes: () => void;
     setStrokeWidth: (width: number) => void;
+    showImages: boolean;
 }
 
 export default function CanvasButtons({
@@ -103,6 +104,7 @@ export default function CanvasButtons({
     selectedId,
     disableAllModes,
     setStrokeWidth,
+    showImages,
 }: CanvasButtonsProps) {
     const {
         canRedo,
@@ -122,7 +124,10 @@ export default function CanvasButtons({
         clear,
     } = useCanvasStore();
 
-    const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImportJSON = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        showImages: boolean,
+    ) => {
         if (!e.target.files || !e.target.files[0]) return;
 
         const file = e.target.files[0];
@@ -162,7 +167,10 @@ export default function CanvasButtons({
                 }
 
                 if (elements.images) {
-                    setImages(elements.images);
+                    if (showImages) setImages(elements.images);
+                    else {
+                        setImages([]);
+                    }
                 }
 
                 // Add everything to history at once as a consolidated state
@@ -192,7 +200,9 @@ export default function CanvasButtons({
                         <input
                             type="file"
                             accept=".str"
-                            onChange={handleImportJSON}
+                            onChange={(e) => {
+                                handleImportJSON(e, showImages);
+                            }}
                             className="absolute inset-0 cursor-pointer opacity-0"
                         />
                         <FileUp className="size-4" />
@@ -332,17 +342,19 @@ export default function CanvasButtons({
                         <CircleIcon className="size-4" />
                     </Button>
                 </div>
-                <div className="relative">
-                    <Button aria-label="upload-image" className="relative">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                        />
-                        <ImageIcon className="size-4" />
-                    </Button>
-                </div>
+                {showImages && (
+                    <div className="relative">
+                        <Button aria-label="upload-image" className="relative">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                            />
+                            <ImageIcon className="size-4" />
+                        </Button>
+                    </div>
+                )}
                 <div>
                     <Button
                         aria-label="dashed-line"
