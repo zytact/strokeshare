@@ -1,9 +1,16 @@
-import { ModeToggle } from '@/components/ui/mode-toggle';
-import InfiniteCanvas from '@/components/ui/InfiniteCanvas';
-import { Help } from '@/components/ui/Help';
 import { Collab } from '@/components/ui/collab';
+import { Help } from '@/components/ui/Help';
+import { ModeToggle } from '@/components/ui/mode-toggle';
 
-export default function HomePage() {
+interface RoomPageProps {
+    params: {
+        roomId: string;
+    };
+}
+
+export default function RoomPage({ params }: RoomPageProps) {
+    const { roomId } = params;
+
     return (
         <main className="relative h-screen w-screen overflow-hidden">
             <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
@@ -15,7 +22,7 @@ export default function HomePage() {
                     <Collab />
                 </div>
             </div>
-            <InfiniteCanvas />
+            <h1 className="text-2xl font-bold">{roomId}</h1>
         </main>
     );
 }
