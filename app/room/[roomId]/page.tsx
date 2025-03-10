@@ -127,7 +127,7 @@ export default function RoomPage() {
                 </div>
             </div>
 
-            <InfiniteCanvas showImages={false} />
+            <InfiniteCanvas />
         </main>
     );
 }

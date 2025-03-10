@@ -36,8 +36,6 @@ export function Collab() {
                 '',
                 roomLink,
             );
-        } else if (!isOpen && window.location.pathname.includes('/room/')) {
-            window.history.pushState({}, '', window.location.origin);
         }
     }, [isOpen, roomLink]);
 

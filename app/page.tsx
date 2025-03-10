@@ -15,7 +15,7 @@ export default function HomePage() {
                     <Collab />
                 </div>
             </div>
-            <InfiniteCanvas showImages={true} />
+            <InfiniteCanvas />
         </main>
     );
 }

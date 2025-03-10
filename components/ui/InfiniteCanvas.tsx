@@ -37,11 +37,7 @@ const LoadedImage = ({ src, alt, ...imageProps }: LoadedImageProps) => {
     return <Image image={image} alt={alt} {...imageProps} />;
 };
 
-export default function InfiniteCanvas({
-    showImages,
-}: {
-    showImages: boolean;
-}) {
+export default function InfiniteCanvas() {
     const { resolvedTheme } = useTheme();
     const [isDrawing, setIsDrawing] = useState(false);
     const stageRef = useRef<Konva.Stage>(null);
@@ -303,7 +299,7 @@ export default function InfiniteCanvas({
     // Function to handle paste operation
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleElementPaste = () => {
-        if (!clipboardItem || !showImages) return;
+        if (!clipboardItem) return;
 
         // Add a small offset to make the pasted item visible
         const OFFSET = 20;
@@ -1815,7 +1811,6 @@ export default function InfiniteCanvas({
                 selectedTextId={selectedTextId}
                 stageScale={stageScale}
                 textMode={textMode}
-                showImages={showImages}
             />
             <textarea
                 ref={textareaRef}
