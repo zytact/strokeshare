@@ -69,12 +69,10 @@ pnpm start
 - fonts - Custom fonts including Excalifont
 - hooks - Custom React hooks
 - lib - Utility functions and shared code
-- public - Static assets
-- server - Server-side code
 - store - State management
 - types - TypeScript type definitions
 
-## 7. Contributing
+## Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -82,6 +80,6 @@ pnpm start
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 8. License
+## License
 
 This project is licensed under the terms of the MIT License included in the repository.
