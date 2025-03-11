@@ -265,7 +265,7 @@ export default function InfiniteCanvas() {
             } else if (selectedShape === 'circle') {
                 shape = stage.findOne('#circle-' + selectedId);
             } else if (selectedShape === 'image') {
-                shape = stage.findOne('#image-' + selectedId);
+                shape = stage.findOne('#' + selectedId); // Remove the 'image-' prefix
             }
 
             if (shape) {
@@ -1787,11 +1787,12 @@ export default function InfiniteCanvas() {
             e.cancelBubble = true;
             const transformer = transformerRef.current;
             if (transformer) {
+                const id = shape === 'image' ? images[i].id : String(i);
                 transformer.nodes([e.target]);
                 transformer.getLayer()?.batchDraw();
+                setSelectedId(id);
+                setSelectedShape(shape);
             }
-            setSelectedId(String(i));
-            setSelectedShape(shape);
         } else if (textMode) {
             e.cancelBubble = true; // Prevent bubbling
 
@@ -1981,7 +1982,7 @@ export default function InfiniteCanvas() {
                         {images.map((image, i) => (
                             <LoadedImage
                                 key={image.id}
-                                id={`image-${image.id}`} // Ensure consistent ID format
+                                id={image.id}
                                 src={image.src}
                                 alt={`User uploaded content ${image.id}`}
                                 x={image.x}

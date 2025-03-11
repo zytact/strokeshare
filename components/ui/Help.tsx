@@ -64,6 +64,12 @@ export function Help() {
                                     <Badge className="mr-2">y</Badge> redo
                                 </span>
                             </li>
+                            <li>
+                                <span>
+                                    <Badge className="mr-2">delete</Badge>
+                                    delete in select mode
+                                </span>
+                            </li>
                         </ul>
                     </div>
                 </div>
