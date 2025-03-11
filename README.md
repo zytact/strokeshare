@@ -36,8 +36,6 @@ git clone https://github.com/yourusername/strokeshare.git
 cd strokeshare
 ```
 
-````
-
 ### 2. Install dependencies
 
 ```bash
@@ -87,4 +85,3 @@ pnpm start
 ## 8. License
 
 This project is licensed under the terms of the MIT License included in the repository.
-````
