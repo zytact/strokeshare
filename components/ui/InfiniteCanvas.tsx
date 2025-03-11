@@ -471,6 +471,61 @@ export default function InfiniteCanvas() {
         }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const handleElementDelete = () => {
+        if (!selectedId || !selectedShape) return;
+
+        switch (selectedShape) {
+            case 'line': {
+                const lineIndex = parseInt(selectedId);
+                const updatedLines = lines.filter(
+                    (_, index) => index !== lineIndex,
+                );
+                setLines(updatedLines);
+                addToHistory(updatedLines);
+                break;
+            }
+            case 'text': {
+                const updatedTexts = textElements.filter(
+                    (text) => text.id !== selectedId,
+                );
+                setTextElements(updatedTexts);
+                addToHistory(updatedTexts);
+                break;
+            }
+            case 'rectangle': {
+                const rectIndex = parseInt(selectedId);
+                const updatedRectangles = rectangles.filter(
+                    (_, index) => index !== rectIndex,
+                );
+                setRectangles(updatedRectangles);
+                addToHistory(updatedRectangles);
+                break;
+            }
+            case 'circle': {
+                const circleIndex = parseInt(selectedId);
+                const updatedCircles = circles.filter(
+                    (_, index) => index !== circleIndex,
+                );
+                setCircles(updatedCircles);
+                addToHistory(updatedCircles);
+                break;
+            }
+            case 'image': {
+                const updatedImages = images.filter(
+                    (img) => img.id !== selectedId,
+                );
+                setImages(updatedImages);
+                addToHistory(updatedImages);
+                break;
+            }
+        }
+
+        resetTransformer();
+        setSelectedId(null);
+        setSelectedShape(null);
+    };
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey) {
@@ -494,6 +549,13 @@ export default function InfiniteCanvas() {
                     }
                 }
             }
+
+            if (e.key === 'Delete') {
+                if (moveMode) {
+                    e.preventDefault();
+                    handleElementDelete();
+                }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -507,6 +569,7 @@ export default function InfiniteCanvas() {
         clipboardItem,
         handleElementCopy,
         handleElementPaste,
+        handleElementDelete,
     ]);
 
     const [stagePos, setStagePos] = useState<Point>({ x: 0, y: 0 });
