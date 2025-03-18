@@ -11,8 +11,7 @@ Strokeshare is a web-based drawing application built with Next.js and Konva.js t
 - **Interactive Canvas**: Create drawings using various colors and stroke widths.
 - **Export Options**: Save your creations in multiple formats (PNG, JPG, SVG, STR).
 - **Custom Tools**: Access specialized drawing tools like shapes, text, and freehand drawing.
-- **Templates**: Start with predefined templates or create from scratch.
-- ** Responsive Design**: Create on any device with tailored interface.
+- **Responsive Design**: Create on any device with tailored interface.
 
 ## Tech Stack
 
