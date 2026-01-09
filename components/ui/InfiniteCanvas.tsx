@@ -1880,7 +1880,6 @@ export default function InfiniteCanvas() {
                 ref={textareaRef}
                 aria-label="textarea"
                 style={{
-                    color: currentColor,
                     lineHeight: '1.2',
                     fontSize: `${
                         selectedTextId
@@ -1889,7 +1888,7 @@ export default function InfiniteCanvas() {
                             : newTextSize * stageScale
                     }px`,
                 }}
-                className="font-excalifont fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 outline-hidden"
+                className="font-excalifont fixed z-10 m-0 hidden resize-none overflow-hidden border-none bg-transparent p-0 text-black outline-hidden dark:text-white"
                 onChange={(e) => setEditingText(e.target.value)}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
