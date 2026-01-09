@@ -467,8 +467,9 @@ describe('InfiniteCanvas Text Mode', () => {
         fireEvent.click(canvas, { clientX: 100, clientY: 100 });
 
         const textarea = screen.getByRole('textbox');
-        // In light theme (mocked), text should be black
-        expect(textarea).toHaveStyle({ color: '#000000' });
+        // In light theme (mocked), text should have text-black class (dark:text-white for dark mode)
+        expect(textarea).toHaveClass('text-black');
+        expect(textarea).toHaveClass('dark:text-white');
     });
 });
 
