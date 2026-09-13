@@ -244,12 +244,6 @@ export default function InfiniteCanvas() {
     }, []);
 
     useEffect(() => {
-        if (!moveMode) {
-            resetTransformer();
-        }
-    }, [moveMode]);
-
-    useEffect(() => {
         if (moveMode && selectedId && selectedShape) {
             const transformer = transformerRef.current;
             const stage = stageRef.current;
@@ -277,11 +271,11 @@ export default function InfiniteCanvas() {
         }
     }, [selectedId, selectedShape, moveMode]);
 
-    useEffect(() => {
-        if (resolvedTheme) {
-            setCurrentColor(resolvedTheme === 'dark' ? '#ffffff' : '#000000');
-        }
-    }, [resolvedTheme]);
+    const [colorTheme, setColorTheme] = useState(resolvedTheme);
+    if (resolvedTheme && resolvedTheme !== colorTheme) {
+        setColorTheme(resolvedTheme);
+        setCurrentColor(resolvedTheme === 'dark' ? '#ffffff' : '#000000');
+    }
 
     useEffect(() => {
         const updateDimensions = () => {
@@ -328,7 +322,7 @@ export default function InfiniteCanvas() {
                 const textData = clipboardItem.data as TextElement;
                 const newText = {
                     ...textData,
-                    id: `text-${Date.now()}`,
+                    id: `text-${crypto.randomUUID()}`,
                     x: textData.x + OFFSET,
                     y: textData.y + OFFSET,
                 };
@@ -362,7 +356,7 @@ export default function InfiniteCanvas() {
                 const imageData = clipboardItem.data as Image;
                 const newImage = {
                     ...imageData,
-                    id: `image-${Date.now()}`,
+                    id: `image-${crypto.randomUUID()}`,
                     x: imageData.x + OFFSET,
                     y: imageData.y + OFFSET,
                 };
@@ -384,7 +378,7 @@ export default function InfiniteCanvas() {
                     );
                     setSelectedId(String(lines.length));
                 } else if (clipboardItem.type === 'text') {
-                    const newTextId = `text-${Date.now()}`;
+                    const newTextId = `text-${crypto.randomUUID()}`;
                     pastedNode = stageRef.current.findOne(`#${newTextId}`);
                     setSelectedId(newTextId);
                 } else if (clipboardItem.type === 'rectangle') {
@@ -398,7 +392,7 @@ export default function InfiniteCanvas() {
                     );
                     setSelectedId(String(circles.length));
                 } else if (clipboardItem.type === 'image') {
-                    const newImageId = `image-${Date.now()}`;
+                    const newImageId = `image-${crypto.randomUUID()}`;
                     pastedNode = stageRef.current.findOne(`#${newImageId}`);
                     setSelectedId(newImageId);
                 }
@@ -1241,7 +1235,7 @@ export default function InfiniteCanvas() {
                 y: (point.y - stagePos.y) / stageScale,
             };
 
-            const newId = `text-${Date.now()}`;
+            const newId = `text-${crypto.randomUUID()}`;
             const newText: TextElement = {
                 x: stagePoint.x,
                 y: stagePoint.y,
@@ -1492,7 +1486,7 @@ export default function InfiniteCanvas() {
             y: (point.y - stagePos.y) / stageScale,
         };
 
-        const newId = `text-${Date.now()}`;
+        const newId = `text-${crypto.randomUUID()}`;
         const newText: TextElement = {
             x: stagePoint.x,
             y: stagePoint.y,
@@ -1623,12 +1617,6 @@ export default function InfiniteCanvas() {
         resetInteractionStates,
     ]);
 
-    useEffect(() => {
-        if (eraserMode) {
-            setTextMode(false);
-        }
-    }, [eraserMode]);
-
     const drawArrowhead = (
         context: Konva.Context,
         x1: number,
@@ -1709,7 +1697,7 @@ export default function InfiniteCanvas() {
                         width: img.width * scale,
                         height: img.height * scale,
                         src: event.target?.result as string,
-                        id: `image-${Date.now()}`,
+                        id: `image-${crypto.randomUUID()}`,
                     };
                     setImages([...images, newImage]);
                     addToHistory([...images, newImage]);
@@ -1749,7 +1737,7 @@ export default function InfiniteCanvas() {
                                         width: img.width * scale,
                                         height: img.height * scale,
                                         src: event.target?.result as string,
-                                        id: `image-${Date.now()}`,
+                                        id: `image-${crypto.randomUUID()}`,
                                     };
                                     setImages([...images, newImage]);
                                     addToHistory([...images, newImage]);
@@ -1809,7 +1797,7 @@ export default function InfiniteCanvas() {
                 y: (point.y - stagePos.y) / stageScale,
             };
 
-            const newId = `text-${Date.now()}`;
+            const newId = `text-${crypto.randomUUID()}`;
             const newText: TextElement = {
                 x: stagePoint.x,
                 y: stagePoint.y,
