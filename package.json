@@ -25,7 +25,7 @@
     "clsx": "^2.1.1",
     "konva": "^9.3.22",
     "lucide-react": "^0.479.0",
-    "next": "15.5.7",
+    "next": "15.5.25",
     "next-themes": "^0.4.6",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "react": "^19.2.0",
@@ -37,7 +37,6 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^15.5.6",
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -46,21 +45,24 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.39.1",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "16.3.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react-hooks": "^5.2.0",
     "jsdom": "^26.1.0",
-    "postcss": "^8.5.6",
+    "postcss": "^8.5.28",
     "prettier": "3.4.2",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
+    "vite": "^7.3.6",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "pnpm": {
+    "overrides": {
+      "next>postcss": "^8.5.28"
+    },
     "onlyBuiltDependencies": [
       "@tailwindcss/oxide",
       "canvas",

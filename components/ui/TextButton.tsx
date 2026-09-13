@@ -37,12 +37,6 @@ export default function TextButton({
 }: TextButtonProps) {
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
-    React.useEffect(() => {
-        if (!textMode) {
-            setIsPopoverOpen(false);
-        }
-    }, [textMode]);
-
     const handleButtonClick = () => {
         // If we're currently in text mode, just turn it off and keep popover closed
         if (textMode) {
@@ -56,7 +50,10 @@ export default function TextButton({
     };
 
     return (
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <Popover
+            open={textMode && isPopoverOpen}
+            onOpenChange={setIsPopoverOpen}
+        >
             <PopoverTrigger asChild>
                 <Button
                     aria-label="text"
